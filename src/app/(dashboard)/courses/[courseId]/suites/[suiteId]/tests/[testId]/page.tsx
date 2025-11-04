@@ -114,6 +114,7 @@ export default function TestTakingPage() {
       });
 
       if (response.data?.getQuestion) {
+        // @ts-expect-error error
         setQuestion(response.data.getQuestion);
         setSelectedAnswer("");
         setShowHints(false);

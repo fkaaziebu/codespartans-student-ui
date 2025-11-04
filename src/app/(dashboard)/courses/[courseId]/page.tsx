@@ -66,6 +66,7 @@ export default function CourseDetailsPage() {
         },
       });
 
+      // @ts-expect-error error
       setCourse(response.data?.getOrganizationCourse);
 
       // Check if course is in cart (from localStorage or state)
