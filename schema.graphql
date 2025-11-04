@@ -1,0 +1,507 @@
+"""Exposes a URL that specifies the behavior of this scalar."""
+directive @specifiedBy(
+  """The URL that specifies the behavior of this scalar."""
+  url: String!
+) on SCALAR
+
+"""
+Indicates exactly one field must be supplied and this field must not be `null`.
+"""
+directive @oneOf on INPUT_OBJECT
+
+type Admin {
+  id: ID!
+  name: String!
+  email: String!
+  organization: Organization
+  assigned_course_versions_for_review: [Version!]
+}
+
+type AdminConnection {
+  edges: [AdminResponseEdge!]!
+  pageInfo: PageInfo!
+  count: Int!
+}
+
+type AdminLoginResponse {
+  id: ID!
+  name: String!
+  email: String!
+  organization: Organization
+  assigned_course_versions_for_review: [Version!]
+  token: String!
+}
+
+type AdminResponse {
+  id: ID!
+  name: String!
+  email: String!
+  organization: Organization
+  assigned_course_versions_for_review: [Version!]
+  total_course_versions: Float!
+  total_approved_course_versions: Float!
+}
+
+type AdminResponseEdge {
+  cursor: String!
+  node: AdminResponse!
+}
+
+type Cart {
+  id: ID!
+  student: Student
+  courses: [Course!]
+  categories: [Category!]
+}
+
+type Category {
+  id: ID!
+  name: String!
+  avatar_url: String!
+  organization: Organization
+  students: [Student!]
+  courses: [Course!]
+}
+
+input CategoryInfoInput {
+  name: String!
+  avatar_url: String!
+}
+
+type Checkout {
+  id: ID!
+  student: Student
+  courses: [Course!]
+  categories: [Category!]
+}
+
+type Coupon {
+  id: ID!
+  organization: Organization
+  courses: [Course!]
+}
+
+type Course {
+  id: ID!
+  title: String!
+  avatar_url: String!
+  description: String!
+  domains: [DomainType!]!
+  level: LevelType!
+  price: Float!
+  currency: CurrencyType!
+  versions: [Version!]
+  approved_version: Version
+  coupons: [Coupon!]
+  categories: [Category!]
+  subscribed_students: [Student!]
+  organization: Organization
+  instructor: Instructor
+}
+
+type CourseConnection {
+  edges: [CourseTypeClassEdge!]!
+  pageInfo: PageInfo!
+  count: Int!
+}
+
+input CourseInfoInput {
+  title: String!
+  avatar_url: String!
+  description: String!
+  domains: [DomainType!]!
+  price: Float!
+  currency: CurrencyType!
+  level: LevelType!
+}
+
+type CourseTypeClassEdge {
+  cursor: String!
+  node: Course!
+}
+
+"""Currency"""
+enum CurrencyType {
+  USD
+  EUR
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+"""Course domains"""
+enum DomainType {
+  SCIENCE
+  ENGLISH
+  MATHEMATICS
+}
+
+type Instructor {
+  id: ID!
+  name: String!
+  email: String!
+  organizations: [Organization!]
+  created_courses: [Course!]
+}
+
+type InstructorConnection {
+  edges: [InstructorResponseEdge!]!
+  pageInfo: PageInfo!
+  count: Int!
+}
+
+type InstructorLoginResponse {
+  id: ID!
+  name: String!
+  email: String!
+  organizations: [Organization!]
+  created_courses: [Course!]
+  token: String!
+}
+
+type InstructorResponse {
+  id: ID!
+  name: String!
+  email: String!
+  organizations: [Organization!]
+  created_courses: [Course!]
+  total_created_courses: Float!
+  total_requested_reviews: Float!
+  total_approved_courses: Float!
+}
+
+type InstructorResponseEdge {
+  cursor: String!
+  node: InstructorResponse!
+}
+
+type Issue {
+  id: ID!
+  description: String!
+  status: IssueStatusType!
+  response: String
+  review: Review
+}
+
+input IssueInfoInput {
+  description: String!
+}
+
+"""Issue status"""
+enum IssueStatusType {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+"""Course level"""
+enum LevelType {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+type Mutation {
+  registerStudent(name: String!, email: String!, password: String!, organizationId: String!): RegisterResponse!
+  registerOrganization(name: String!, email: String!, password: String!): RegisterResponse!
+  registerInstructor(name: String!, email: String!, password: String!): Instructor!
+  registerAdmin(name: String!, email: String!, password: String!): Admin!
+  addCourseVersionReview(versionId: String!, reviewInfo: ReviewInfoInput!): Review!
+  addReviewIssue(reviewId: String!, issueInfo: IssueInfoInput!): Issue!
+  closeIssue(issueId: String!): Issue!
+  closeReview(reviewId: String!): Review!
+  approveCourseVersion(versionId: String!): Version!
+  updateIssue(issueId: String!, issueStatus: IssueStatusType!, response: String!): Issue!
+  createCourse(organizationId: String!, courseInfo: CourseInfoInput!): Course!
+  updateCourse(courseId: String!, courseInfo: UpdateCourseInfoInput!): Course!
+  addCourseVersion(courseId: String!): Version!
+  addQuestionsToCourseVersion(versionId: String!, questions: [QuestionInput!]!): Version!
+  updateQuestion(questionId: String!, question: QuestionInput!): Question!
+  requestCourseVersionReview(versionId: String!): ReviewRequest!
+  addCourseToCart(courseId: String!): Cart!
+  addCategoryToCart(categoryId: String!): Cart!
+  createCheckout(autoApproveSubscription: Boolean!, checkoutFromCart: Boolean, courseId: String): Checkout!
+  assignCourseVersionForReview(versionId: String!, adminId: String!): Version!
+  createCategory(categoryInfo: CategoryInfoInput!): Category!
+  addCoursesToCategory(categoryId: String!, courseIds: [String!]!): Category!
+}
+
+type Organization {
+  id: ID!
+  name: String!
+  email: String!
+  admins: [Admin!]
+  instructors: [Instructor!]
+  students: [Student!]
+  organizational_courses: [Course!]
+  organizational_categories: [Category!]
+  organizational_coupons: [Coupon!]
+  requested_reviews: [ReviewRequest!]
+}
+
+type OrganizationLoginResponse {
+  id: ID!
+  name: String!
+  email: String!
+  admins: [Admin!]
+  instructors: [Instructor!]
+  students: [Student!]
+  organizational_courses: [Course!]
+  organizational_categories: [Category!]
+  organizational_coupons: [Coupon!]
+  requested_reviews: [ReviewRequest!]
+  token: String!
+}
+
+type PageInfo {
+  startCursor: String
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+input PaginationInput {
+  first: Int
+  after: String
+  last: Int
+  before: String
+}
+
+type Query {
+  loginAdmin(email: String!, password: String!): AdminLoginResponse!
+  loginInstructor(email: String!, password: String!): InstructorLoginResponse!
+  loginStudent(email: String!, password: String!): StudentLoginResponse!
+  loginOrganization(email: String!, password: String!): OrganizationLoginResponse!
+  listQuestionsForVersion(versionId: String!, searchTerm: String, pagination: PaginationInput): QuestionConnection!
+  listAssignedVersions: VersionConnection!
+  getCourseVersion(versionId: String!): VersionResponse!
+  getVersionReview(reviewId: String!): Review!
+  getInstructorVersionReview(reviewId: String!): Review!
+  listInstructorQuestionsForVersion(versionId: String!, searchTerm: String, pagination: PaginationInput): QuestionConnection!
+  getCourse(courseId: String!): Course!
+  getInstructorCourseVersion(versionId: String!): VersionResponse!
+  listCourses(searchTerm: String, pagination: PaginationInput): CourseConnection!
+  listOrganizationCourses(organizationId: String!, searchTerm: String, pagination: PaginationInput): CourseConnection!
+  getStats: StatsResponse!
+  listInstructors(searchTerm: String, pagination: PaginationInput): InstructorConnection!
+  listAdmins(searchTerm: String, pagination: PaginationInput): AdminConnection!
+  listRequestedReviews(filter: RequestedReviewFilterInput, pagination: PaginationInput): RequestedReviewConnection!
+}
+
+type Question {
+  id: ID!
+  question_number: Float!
+  description: String!
+  hints: [String!]!
+  solution_steps: [String!]!
+  options: [String!]
+  type: QuestionType!
+  tags: [QuestionTagType!]!
+  correct_answer: String!
+  difficulty: QuestionDifficultyType!
+  estimated_time_in_ms: Float!
+  version: Version
+}
+
+type QuestionConnection {
+  edges: [QuestionTypeClassEdge!]!
+  pageInfo: PageInfo!
+  count: Int!
+}
+
+"""Question difficulty types"""
+enum QuestionDifficultyType {
+  EASY
+  MEDIUM
+  HARD
+}
+
+input QuestionInput {
+  question_number: Float!
+  description: String!
+  hints: [String!]!
+  solution_steps: [String!]!
+  options: [String!]
+  type: QuestionType!
+  tags: [QuestionTagType!]!
+  difficulty: QuestionDifficultyType!
+  estimated_time_in_ms: Float!
+  correct_answer: String!
+}
+
+"""Question tag types"""
+enum QuestionTagType {
+  TAG_GENERAL
+  TAG_ALGORITHM
+  TAG_DATA_STRUCTURE
+  TAG_DATABASE
+  TAG_NETWORK
+  TAG_SECURITY
+  TAG_SYSTEM
+  TAG_WEB
+}
+
+"""Question types"""
+enum QuestionType {
+  MULTIPLE_CHOICE
+  MULTIPLE_SELECT
+  FILL_IN
+}
+
+type QuestionTypeClassEdge {
+  cursor: String!
+  node: Question!
+}
+
+type RegisterResponse {
+  message: String!
+}
+
+type RequestedReviewConnection {
+  edges: [ReviewRequestTypeClassEdge!]!
+  pageInfo: PageInfo!
+  count: Int!
+}
+
+input RequestedReviewFilterInput {
+  instructorId: String
+  adminId: String
+}
+
+type Review {
+  id: ID!
+  title: String!
+  message: String!
+  status: ReviewStatusType!
+  course_version: Version
+  issues: [Issue!]
+  inserted_at: DateTime!
+  updated_at: DateTime!
+}
+
+input ReviewInfoInput {
+  title: String!
+  message: String!
+}
+
+type ReviewRequest {
+  id: ID!
+  organization: Organization
+  course_version: Version
+  inserted_at: DateTime!
+  updated_at: DateTime!
+}
+
+type ReviewRequestTypeClassEdge {
+  cursor: String!
+  node: ReviewRequest!
+}
+
+type ReviewResponse {
+  id: ID!
+  title: String!
+  message: String!
+  status: ReviewStatusType!
+  course_version: Version
+  issues: [Issue!]
+  inserted_at: DateTime!
+  updated_at: DateTime!
+  total_issues: Float!
+}
+
+"""Review status"""
+enum ReviewStatusType {
+  OPEN
+  CLOSED
+}
+
+type StatsResponse {
+  total_instructors: Float!
+  total_admins: Float!
+  total_requested_reviews: Float!
+  total_assigned_reviews: Float!
+  total_completed_reviews: Float!
+}
+
+type Student {
+  id: ID!
+  name: String!
+  email: String!
+  subscribed_courses: [Course!]
+  subscribed_categories: [Category!]
+  organizations: [Organization!]
+  checkouts: [Checkout!]
+  cart: Cart
+}
+
+type StudentLoginResponse {
+  id: ID!
+  name: String!
+  email: String!
+  subscribed_courses: [Course!]
+  subscribed_categories: [Category!]
+  organizations: [Organization!]
+  checkouts: [Checkout!]
+  cart: Cart
+  token: String!
+}
+
+input UpdateCourseInfoInput {
+  title: String
+  avatar_url: String
+  description: String
+  domains: [DomainType!]
+  price: Float
+  currency: CurrencyType
+}
+
+type Version {
+  id: ID!
+  version_number: Float!
+  status: VersionStatusType!
+  review_request: ReviewRequest
+  assigned_admin: Admin
+  course: Course
+  reviews: [Review!]
+  questions: [Question!]
+  inserted_at: DateTime!
+  updated_at: DateTime!
+}
+
+type VersionConnection {
+  edges: [VersionResponseEdge!]!
+  pageInfo: PageInfo!
+  count: Int!
+}
+
+type VersionResponse {
+  id: ID!
+  version_number: Float!
+  status: VersionStatusType!
+  review_request: ReviewRequest
+  assigned_admin: Admin
+  course: Course
+  reviews: [ReviewResponse!]!
+  questions: [Question!]
+  inserted_at: DateTime!
+  updated_at: DateTime!
+  total_questions: Float!
+  total_reviews: Float!
+}
+
+type VersionResponseEdge {
+  cursor: String!
+  node: VersionResponse!
+}
+
+"""Version status"""
+enum VersionStatusType {
+  ARCHIVED
+  PENDING
+  APPROVED
+  REJECTED
+}
+

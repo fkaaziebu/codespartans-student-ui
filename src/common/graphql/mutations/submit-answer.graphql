@@ -1,0 +1,19 @@
+mutation SubmitAnswer(
+    $testId: String!
+    $questionId: String!
+    $timeRange: String!
+    $answer: String!
+) {
+    submitAnswer(
+        testId: $testId
+        questionId: $questionId
+        timeRange: $timeRange
+        answer: $answer
+    ) {
+        answer_provided
+        hints_used
+        id
+        is_flagged
+        question_id
+    }
+}

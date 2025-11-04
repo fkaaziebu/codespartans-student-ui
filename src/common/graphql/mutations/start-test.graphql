@@ -1,0 +1,6 @@
+mutation StartTest($suiteId: String!) {
+    startTest(suiteId: $suiteId) {
+        id
+        status
+    }
+}

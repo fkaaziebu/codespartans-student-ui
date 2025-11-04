@@ -1,0 +1,6 @@
+mutation PauseTest($testId: String!) {
+    pauseTest(testId: $testId) {
+        id
+        status
+    }
+}

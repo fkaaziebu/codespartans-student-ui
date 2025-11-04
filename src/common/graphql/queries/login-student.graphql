@@ -1,0 +1,11 @@
+query LoginStudent($email: String!, $password: String!) {
+    loginStudent(email: $email, password: $password) {
+        id
+        email
+        name
+        token
+        organizations {
+            id
+        }
+    }
+}

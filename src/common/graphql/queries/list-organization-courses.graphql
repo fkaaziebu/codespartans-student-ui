@@ -1,0 +1,24 @@
+query ListOrganizationCourses($organizationId: String!) {
+    listOrganizationCourses(organizationId: $organizationId) {
+        edges {
+            node {
+                id
+                title
+                instructor {
+                    id
+                    name
+                    email
+                }
+                avatar_url
+                currency
+                description
+                domains
+                level
+                price
+                is_subscribed
+                total_questions
+                estimated_duration
+            }
+        }
+    }
+}

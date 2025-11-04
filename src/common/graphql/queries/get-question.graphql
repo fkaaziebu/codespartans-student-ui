@@ -1,0 +1,14 @@
+query GetQuestion($testId: String!) {
+    getQuestion(testId: $testId) {
+        description
+        difficulty
+        estimated_time_in_ms
+        hints
+        id
+        options
+        question_number
+        solution_steps
+        tags
+        type
+    }
+}

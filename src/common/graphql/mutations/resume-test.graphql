@@ -1,0 +1,6 @@
+mutation ResumeTest($testId: String!) {
+    resumeTest(testId: $testId) {
+        id
+        status
+    }
+}

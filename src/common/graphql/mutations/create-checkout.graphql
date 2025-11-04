@@ -1,0 +1,13 @@
+mutation CreateCheckout(
+    $autoApproveSubscription: Boolean!
+    $checkoutFromCart: Boolean
+    $courseId: String
+) {
+    createCheckout(
+        autoApproveSubscription: $autoApproveSubscription
+        checkoutFromCart: $checkoutFromCart
+        courseId: $courseId
+    ) {
+        id
+    }
+}

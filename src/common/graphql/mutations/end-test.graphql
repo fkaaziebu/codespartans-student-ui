@@ -1,0 +1,6 @@
+mutation EndTest($testId: String!) {
+    endTest(testId: $testId) {
+        id
+        status
+    }
+}

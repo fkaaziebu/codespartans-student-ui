@@ -1,0 +1,33 @@
+query GetSubscribedCourseDetails($courseId: String!) {
+    getSubscribedCourseDetails(courseId: $courseId) {
+        id
+        avatar_url
+        currency
+        description
+        domains
+        level
+        price
+        title
+        instructor {
+            id
+            email
+            name
+        }
+        approved_version {
+            id
+            questions {
+                id
+            }
+            test_suites {
+                id
+                description
+                keywords
+                title
+                difficulty
+                questions {
+                    id
+                }
+            }
+        }
+    }
+}
