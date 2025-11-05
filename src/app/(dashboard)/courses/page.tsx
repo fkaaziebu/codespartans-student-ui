@@ -47,6 +47,7 @@ export default function StudentCoursesPage() {
         variables: {
           organizationId,
         },
+        fetchPolicy: "no-cache",
       });
 
       const coursesData =
