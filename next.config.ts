@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  output: "standalone",
   env: {
     GRAPHQL_BASE_URL: process.env.GRAPHQL_BASE_URL,
     GRAPGQL_WS_BASE_URL: process.env.GRAPGQL_WS_BASE_URL,
