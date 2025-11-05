@@ -13,8 +13,8 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-ENV GRAPHQL_BASE_URL=http://localhost:4000/graphql
-ENV GRAPGQL_WS_BASE_URL=http://localhost:4000/graphql-ws
+ENV GRAPHQL_BASE_URL=http://3.68.98.186:4000/graphql
+ENV GRAPGQL_WS_BASE_URL=http://3.68.98.186:4000/graphql-ws
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
