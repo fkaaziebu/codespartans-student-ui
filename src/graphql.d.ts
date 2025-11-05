@@ -98,6 +98,15 @@ declare module '*/list-organization-courses.graphql' {
 }
     
 
+declare module '*/list-organizations.graphql' {
+  import { DocumentNode } from 'graphql';
+  const defaultDocument: DocumentNode;
+  export const ListOrganizations: DocumentNode;
+
+  export default defaultDocument;
+}
+    
+
 declare module '*/login-student.graphql' {
   import { DocumentNode } from 'graphql';
   const defaultDocument: DocumentNode;

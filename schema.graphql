@@ -100,7 +100,7 @@ type Course {
 }
 
 type CourseConnection {
-  edges: [CourseTypeClassEdge!]!
+  edges: [CourseResponseEdge!]!
   pageInfo: PageInfo!
   count: Int!
 }
@@ -115,9 +115,30 @@ input CourseInfoInput {
   level: LevelType!
 }
 
-type CourseTypeClassEdge {
+type CourseResponse {
+  id: ID!
+  title: String!
+  avatar_url: String!
+  description: String!
+  domains: [DomainType!]!
+  level: LevelType!
+  price: Float!
+  currency: CurrencyType!
+  versions: [Version!]
+  approved_version: Version
+  coupons: [Coupon!]
+  categories: [Category!]
+  subscribed_students: [Student!]
+  organization: Organization
+  instructor: Instructor
+  is_subscribed: Boolean!
+  total_questions: Float!
+  estimated_duration: Float!
+}
+
+type CourseResponseEdge {
   cursor: String!
-  node: Course!
+  node: CourseResponse!
 }
 
 """Currency"""
@@ -218,7 +239,7 @@ type Mutation {
   createCourse(organizationId: String!, courseInfo: CourseInfoInput!): Course!
   updateCourse(courseId: String!, courseInfo: UpdateCourseInfoInput!): Course!
   addCourseVersion(courseId: String!): Version!
-  addQuestionsToCourseVersion(versionId: String!, questions: [QuestionInput!]!): Version!
+  addQuestionsToCourseVersion(versionId: String!, suiteTitle: String!, suiteDescription: String!, suiteKeywords: [String!]!, questions: [QuestionInput!]!): Version!
   updateQuestion(questionId: String!, question: QuestionInput!): Question!
   requestCourseVersionReview(versionId: String!): ReviewRequest!
   addCourseToCart(courseId: String!): Cart!
@@ -227,6 +248,11 @@ type Mutation {
   assignCourseVersionForReview(versionId: String!, adminId: String!): Version!
   createCategory(categoryInfo: CategoryInfoInput!): Category!
   addCoursesToCategory(categoryId: String!, courseIds: [String!]!): Category!
+  startTest(suiteId: String!): Test!
+  pauseTest(testId: String!): Test!
+  resumeTest(testId: String!): Test!
+  endTest(testId: String!): Test!
+  submitAnswer(testId: String!, questionId: String!, timeRange: String!, answer: String!): SubmittedAnswer!
 }
 
 type Organization {
@@ -242,6 +268,12 @@ type Organization {
   requested_reviews: [ReviewRequest!]
 }
 
+type OrganizationConnection {
+  edges: [OrganizationTypeClassEdge!]!
+  pageInfo: PageInfo!
+  count: Int!
+}
+
 type OrganizationLoginResponse {
   id: ID!
   name: String!
@@ -254,6 +286,11 @@ type OrganizationLoginResponse {
   organizational_coupons: [Coupon!]
   requested_reviews: [ReviewRequest!]
   token: String!
+}
+
+type OrganizationTypeClassEdge {
+  cursor: String!
+  node: Organization!
 }
 
 type PageInfo {
@@ -274,6 +311,7 @@ type Query {
   loginAdmin(email: String!, password: String!): AdminLoginResponse!
   loginInstructor(email: String!, password: String!): InstructorLoginResponse!
   loginStudent(email: String!, password: String!): StudentLoginResponse!
+  listOrganizations(searchTerm: String, pagination: PaginationInput): OrganizationConnection!
   loginOrganization(email: String!, password: String!): OrganizationLoginResponse!
   listQuestionsForVersion(versionId: String!, searchTerm: String, pagination: PaginationInput): QuestionConnection!
   listAssignedVersions: VersionConnection!
@@ -284,11 +322,14 @@ type Query {
   getCourse(courseId: String!): Course!
   getInstructorCourseVersion(versionId: String!): VersionResponse!
   listCourses(searchTerm: String, pagination: PaginationInput): CourseConnection!
+  getOrganizationCourse(courseId: String!): Course!
   listOrganizationCourses(organizationId: String!, searchTerm: String, pagination: PaginationInput): CourseConnection!
   getStats: StatsResponse!
   listInstructors(searchTerm: String, pagination: PaginationInput): InstructorConnection!
   listAdmins(searchTerm: String, pagination: PaginationInput): AdminConnection!
   listRequestedReviews(filter: RequestedReviewFilterInput, pagination: PaginationInput): RequestedReviewConnection!
+  getSubscribedCourseDetails(courseId: String!): Course!
+  getQuestion(testId: String!): Question!
 }
 
 type Question {
@@ -449,6 +490,45 @@ type StudentLoginResponse {
   token: String!
 }
 
+type SubmittedAnswer {
+  id: ID!
+  question_id: String!
+  answer_provided: String!
+  hints_used: [String!]!
+  is_flagged: Boolean!
+  question: Question
+  test: Test
+}
+
+"""Suite difficulty"""
+enum SuiteDifficultyType {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+type Test {
+  id: ID!
+  status: TestStatusType!
+  submitted_answers: [SubmittedAnswer!]
+}
+
+"""Test status"""
+enum TestStatusType {
+  ON_GOING
+  PAUSED
+  ENDED
+}
+
+type TestSuite {
+  id: ID!
+  title: String!
+  description: String!
+  keywords: [String!]!
+  difficulty: SuiteDifficultyType!
+  questions: [Question!]!
+}
+
 input UpdateCourseInfoInput {
   title: String
   avatar_url: String
@@ -467,6 +547,7 @@ type Version {
   course: Course
   reviews: [Review!]
   questions: [Question!]
+  test_suites: [TestSuite!]
   inserted_at: DateTime!
   updated_at: DateTime!
 }
@@ -486,6 +567,7 @@ type VersionResponse {
   course: Course
   reviews: [ReviewResponse!]!
   questions: [Question!]
+  test_suites: [TestSuite!]
   inserted_at: DateTime!
   updated_at: DateTime!
   total_questions: Float!

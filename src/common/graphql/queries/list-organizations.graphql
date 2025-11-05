@@ -1,0 +1,10 @@
+query ListOrganizations($searchTerm: String, $pagination: PaginationInput) {
+    listOrganizations(searchTerm: $searchTerm, pagination: $pagination) {
+        edges {
+            node {
+                name
+                id
+            }
+        }
+    }
+}
