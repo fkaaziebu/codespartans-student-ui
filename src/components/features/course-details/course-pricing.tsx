@@ -4,30 +4,17 @@ import { Button } from "@/components/ui/button";
 
 interface CoursePricingProps {
   price?: number;
-  currency?: string;
   isSubscribed?: boolean;
-  isInCart: boolean;
-  onAddToCart: () => void;
-  onRemoveFromCart: () => void;
   onEnrollNow: () => void;
   onStartLearning: () => void;
 }
 
 export default function CoursePricing({
   price,
-  currency,
   isSubscribed,
-  isInCart,
-  onAddToCart,
-  onRemoveFromCart,
   onEnrollNow,
   onStartLearning,
 }: CoursePricingProps) {
-  const formatPrice = (price?: number, currency?: string) => {
-    if (price === undefined || price === null || price === 0) return "Free";
-    return `${currency || "$"}${price.toFixed(2)}`;
-  };
-
   const isFree = !price || price === 0;
 
   return (

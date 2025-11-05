@@ -115,7 +115,7 @@ export default function CourseDetailsPage() {
       },
     });
 
-    router.push(`/courses/${courseId}`);
+    router.push(`/courses`);
   };
 
   const handleStartLearning = () => {
@@ -276,11 +276,7 @@ export default function CourseDetailsPage() {
               <div className="sticky top-6">
                 <CoursePricing
                   price={course.price}
-                  currency={course.currency}
                   isSubscribed={course.is_subscribed}
-                  isInCart={isInCart}
-                  onAddToCart={handleAddToCart}
-                  onRemoveFromCart={handleRemoveFromCart}
                   onEnrollNow={handleEnrollNow}
                   onStartLearning={handleStartLearning}
                 />

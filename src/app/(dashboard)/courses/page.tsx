@@ -1,5 +1,4 @@
 "use client";
-import { ShoppingCart } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useListOrganizationCourses } from "@/common/hooks/queries";
@@ -9,8 +8,6 @@ import {
   CoursesGrid,
   EmptyState,
 } from "@/components/features/courses";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 
 type CourseNode = {
   id: string;
