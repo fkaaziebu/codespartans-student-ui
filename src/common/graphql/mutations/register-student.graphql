@@ -1,15 +1,5 @@
-mutation RegisterStudent(
-    $name: String!
-    $email: String!
-    $password: String!
-    $organizationId: String!
-) {
-    registerStudent(
-        name: $name
-        email: $email
-        password: $password
-        organizationId: $organizationId
-    ) {
+mutation RegisterStudent($name: String!, $email: String!, $password: String!) {
+    registerStudent(name: $name, email: $email, password: $password) {
         message
     }
 }
