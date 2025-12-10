@@ -13,5 +13,7 @@ query GetOrganizationCourse($courseId: String!) {
         level
         price
         title
+        is_subscribed
+        is_course_in_cart
     }
 }

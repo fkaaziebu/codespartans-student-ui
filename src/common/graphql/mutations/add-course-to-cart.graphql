@@ -1,0 +1,5 @@
+mutation AddCourseToCart($courseId: String!) {
+    addCourseToCart(courseId: $courseId) {
+        id
+    }
+}

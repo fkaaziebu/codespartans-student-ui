@@ -1,3 +1,4 @@
+export { CourseDetailsContentArea } from "./course-details-content-area";
 export { default as CourseInstructor } from "./course-instructor";
 export { default as CourseOverview } from "./course-overview";
 export { default as CoursePricing } from "./course-pricing";

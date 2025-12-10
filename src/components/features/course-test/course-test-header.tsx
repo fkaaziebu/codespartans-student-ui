@@ -3,7 +3,6 @@ import { Award, BookOpen, CheckCircle, TrendingUp } from "lucide-react";
 
 interface CourseTestHeaderProps {
   totalSuites: number;
-  totalQuestions: number;
   completedSuites: number;
   totalAttempts: number;
   averageScore: number;
@@ -11,7 +10,6 @@ interface CourseTestHeaderProps {
 
 export default function CourseTestHeader({
   totalSuites,
-  totalQuestions,
   completedSuites,
   totalAttempts,
   averageScore,

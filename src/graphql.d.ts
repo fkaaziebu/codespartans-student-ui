@@ -1,4 +1,13 @@
 
+declare module '*/add-course-to-cart.graphql' {
+  import { DocumentNode } from 'graphql';
+  const defaultDocument: DocumentNode;
+  export const AddCourseToCart: DocumentNode;
+
+  export default defaultDocument;
+}
+    
+
 declare module '*/create-checkout.graphql' {
   import { DocumentNode } from 'graphql';
   const defaultDocument: DocumentNode;
@@ -35,6 +44,15 @@ declare module '*/register-student.graphql' {
 }
     
 
+declare module '*/remove-course-from-cart.graphql' {
+  import { DocumentNode } from 'graphql';
+  const defaultDocument: DocumentNode;
+  export const RemoveCourseFromCart: DocumentNode;
+
+  export default defaultDocument;
+}
+    
+
 declare module '*/resume-test.graphql' {
   import { DocumentNode } from 'graphql';
   const defaultDocument: DocumentNode;
@@ -57,6 +75,15 @@ declare module '*/submit-answer.graphql' {
   import { DocumentNode } from 'graphql';
   const defaultDocument: DocumentNode;
   export const SubmitAnswer: DocumentNode;
+
+  export default defaultDocument;
+}
+    
+
+declare module '*/get-all-attempted-questions.graphql' {
+  import { DocumentNode } from 'graphql';
+  const defaultDocument: DocumentNode;
+  export const GetAllAttemptedQuestions: DocumentNode;
 
   export default defaultDocument;
 }
@@ -89,6 +116,15 @@ declare module '*/get-subscribed-course-details.graphql' {
 }
     
 
+declare module '*/list-cart-courses.graphql' {
+  import { DocumentNode } from 'graphql';
+  const defaultDocument: DocumentNode;
+  export const ListCartCourses: DocumentNode;
+
+  export default defaultDocument;
+}
+    
+
 declare module '*/list-organization-courses.graphql' {
   import { DocumentNode } from 'graphql';
   const defaultDocument: DocumentNode;
@@ -111,6 +147,24 @@ declare module '*/login-student.graphql' {
   import { DocumentNode } from 'graphql';
   const defaultDocument: DocumentNode;
   export const LoginStudent: DocumentNode;
+
+  export default defaultDocument;
+}
+    
+
+declare module '*/student-profile.graphql' {
+  import { DocumentNode } from 'graphql';
+  const defaultDocument: DocumentNode;
+  export const StudentProfile: DocumentNode;
+
+  export default defaultDocument;
+}
+    
+
+declare module '*/test-stats.graphql' {
+  import { DocumentNode } from 'graphql';
+  const defaultDocument: DocumentNode;
+  export const TestStats: DocumentNode;
 
   export default defaultDocument;
 }

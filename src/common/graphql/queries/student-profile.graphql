@@ -1,0 +1,7 @@
+query StudentProfile {
+    studentProfile {
+        id
+        name
+        email
+    }
+}

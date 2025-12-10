@@ -1,0 +1,41 @@
+query TestStats($testId: String!) {
+    testStats(testId: $testId) {
+        submitted_answers {
+            answer_provided
+            hints_used
+            id
+            is_flagged
+            question {
+                correct_answer
+                description
+                difficulty
+                estimated_time_in_ms
+                hints
+                id
+                options
+                question_number
+                solution_steps
+                tags
+                type
+            }
+            question_id
+        }
+        status
+        id
+        test_suite {
+            questions {
+                correct_answer
+                description
+                difficulty
+                estimated_time_in_ms
+                id
+                options
+                question_number
+                solution_steps
+                tags
+                type
+                hints
+            }
+        }
+    }
+}

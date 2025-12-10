@@ -1,0 +1,17 @@
+query ListCartCourses {
+    listCartCourses {
+        id
+        avatar_url
+        currency
+        description
+        domains
+        instructor {
+            id
+            email
+            name
+        }
+        level
+        price
+        title
+    }
+}

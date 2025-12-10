@@ -1,0 +1,7 @@
+query GetAllAttemptedQuestions($testId: String!) {
+    getAllAttemptedQuestions(testId: $testId) {
+        answer_provided
+        question_id
+        is_flagged
+    }
+}

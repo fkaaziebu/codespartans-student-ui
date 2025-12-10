@@ -1,5 +1,15 @@
-query ListOrganizationCourses($organizationId: String!) {
-    listOrganizationCourses(organizationId: $organizationId) {
+query ListOrganizationCourses(
+    $searchTerm: String
+    $pagination: PaginationInput
+    $organizationId: String
+    $filter: CourseFilterInput
+) {
+    listOrganizationCourses(
+        searchTerm: $searchTerm
+        pagination: $pagination
+        organizationId: $organizationId
+        filter: $filter
+    ) {
         edges {
             node {
                 id

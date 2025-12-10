@@ -17,6 +17,9 @@ query GetSubscribedCourseDetails($courseId: String!) {
             id
             questions {
                 id
+                question_number
+                description
+                options
             }
             test_suites {
                 id
