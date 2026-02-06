@@ -53,6 +53,24 @@ declare module '*/remove-course-from-cart.graphql' {
 }
     
 
+declare module '*/request-student-password-reset.graphql' {
+  import { DocumentNode } from 'graphql';
+  const defaultDocument: DocumentNode;
+  export const RequestStudentPasswordReset: DocumentNode;
+
+  export default defaultDocument;
+}
+    
+
+declare module '*/reset-student-password.graphql' {
+  import { DocumentNode } from 'graphql';
+  const defaultDocument: DocumentNode;
+  export const ResetStudentPassword: DocumentNode;
+
+  export default defaultDocument;
+}
+    
+
 declare module '*/resume-test.graphql' {
   import { DocumentNode } from 'graphql';
   const defaultDocument: DocumentNode;

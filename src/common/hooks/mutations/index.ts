@@ -7,3 +7,5 @@ export { default as useRemoveCourseFromCart } from "./use-remove-course-from-car
 export { default as useResumeTest } from "./use-resume-test";
 export { default as useStartTest } from "./use-start-test";
 export { default as useSubmitAnswer } from "./use-submit-answer";
+export { default as useRequestStudentPasswordReset } from "./use-request-student-password-reset";
+export { default as useResetStudentPassword } from "./use-reset-student-password";

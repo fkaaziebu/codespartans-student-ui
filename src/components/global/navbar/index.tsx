@@ -12,8 +12,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MyCart } from "./my-cart";
 import { SearchInput } from "./search-input";
+import { useRouter } from "next/navigation";
 
 export const Navbar = () => {
+  const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -54,10 +56,17 @@ export const Navbar = () => {
             <SearchInput />
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="outline" className="rounded-none">
+            <Button
+              variant="outline"
+              className="rounded-none"
+              onClick={() => router.push("/login")}
+            >
               Log In
             </Button>
-            <Button className="bg-purple-600 hover:bg-purple-700 rounded-none">
+            <Button
+              className="bg-purple-600 hover:bg-purple-700 rounded-none"
+              onClick={() => router.push("/")}
+            >
               Sign Up
             </Button>
           </div>

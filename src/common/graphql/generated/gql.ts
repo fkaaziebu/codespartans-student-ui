@@ -20,6 +20,8 @@ type Documents = {
     "mutation PauseTest($testId: String!) {\n  pauseTest(testId: $testId) {\n    id\n    status\n  }\n}": typeof types.PauseTestDocument,
     "mutation RegisterStudent($name: String!, $email: String!, $password: String!) {\n  registerStudent(name: $name, email: $email, password: $password) {\n    message\n  }\n}": typeof types.RegisterStudentDocument,
     "mutation RemoveCourseFromCart($courseId: String!) {\n  removeCourseFromCart(courseId: $courseId) {\n    id\n  }\n}": typeof types.RemoveCourseFromCartDocument,
+    "mutation RequestStudentPasswordReset($email: String!) {\n  requestStudentPasswordReset(email: $email) {\n    message\n  }\n}": typeof types.RequestStudentPasswordResetDocument,
+    "mutation ResetStudentPassword($email: String!, $token: String!, $password: String!) {\n  resetStudentPassword(email: $email, token: $token, password: $password) {\n    message\n  }\n}": typeof types.ResetStudentPasswordDocument,
     "mutation ResumeTest($testId: String!) {\n  resumeTest(testId: $testId) {\n    id\n    status\n  }\n}": typeof types.ResumeTestDocument,
     "mutation StartTest($suiteId: String!) {\n  startTest(suiteId: $suiteId) {\n    id\n    status\n  }\n}": typeof types.StartTestDocument,
     "mutation SubmitAnswer($testId: String!, $questionId: String!, $timeRange: String!, $answer: String!, $isFlagged: Boolean!) {\n  submitAnswer(\n    testId: $testId\n    questionId: $questionId\n    timeRange: $timeRange\n    answer: $answer\n    isFlagged: $isFlagged\n  ) {\n    answer_provided\n    hints_used\n    id\n    is_flagged\n    question_id\n  }\n}": typeof types.SubmitAnswerDocument,
@@ -41,6 +43,8 @@ const documents: Documents = {
     "mutation PauseTest($testId: String!) {\n  pauseTest(testId: $testId) {\n    id\n    status\n  }\n}": types.PauseTestDocument,
     "mutation RegisterStudent($name: String!, $email: String!, $password: String!) {\n  registerStudent(name: $name, email: $email, password: $password) {\n    message\n  }\n}": types.RegisterStudentDocument,
     "mutation RemoveCourseFromCart($courseId: String!) {\n  removeCourseFromCart(courseId: $courseId) {\n    id\n  }\n}": types.RemoveCourseFromCartDocument,
+    "mutation RequestStudentPasswordReset($email: String!) {\n  requestStudentPasswordReset(email: $email) {\n    message\n  }\n}": types.RequestStudentPasswordResetDocument,
+    "mutation ResetStudentPassword($email: String!, $token: String!, $password: String!) {\n  resetStudentPassword(email: $email, token: $token, password: $password) {\n    message\n  }\n}": types.ResetStudentPasswordDocument,
     "mutation ResumeTest($testId: String!) {\n  resumeTest(testId: $testId) {\n    id\n    status\n  }\n}": types.ResumeTestDocument,
     "mutation StartTest($suiteId: String!) {\n  startTest(suiteId: $suiteId) {\n    id\n    status\n  }\n}": types.StartTestDocument,
     "mutation SubmitAnswer($testId: String!, $questionId: String!, $timeRange: String!, $answer: String!, $isFlagged: Boolean!) {\n  submitAnswer(\n    testId: $testId\n    questionId: $questionId\n    timeRange: $timeRange\n    answer: $answer\n    isFlagged: $isFlagged\n  ) {\n    answer_provided\n    hints_used\n    id\n    is_flagged\n    question_id\n  }\n}": types.SubmitAnswerDocument,
@@ -94,6 +98,14 @@ export function graphql(source: "mutation RegisterStudent($name: String!, $email
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "mutation RemoveCourseFromCart($courseId: String!) {\n  removeCourseFromCart(courseId: $courseId) {\n    id\n  }\n}"): (typeof documents)["mutation RemoveCourseFromCart($courseId: String!) {\n  removeCourseFromCart(courseId: $courseId) {\n    id\n  }\n}"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "mutation RequestStudentPasswordReset($email: String!) {\n  requestStudentPasswordReset(email: $email) {\n    message\n  }\n}"): (typeof documents)["mutation RequestStudentPasswordReset($email: String!) {\n  requestStudentPasswordReset(email: $email) {\n    message\n  }\n}"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "mutation ResetStudentPassword($email: String!, $token: String!, $password: String!) {\n  resetStudentPassword(email: $email, token: $token, password: $password) {\n    message\n  }\n}"): (typeof documents)["mutation ResetStudentPassword($email: String!, $token: String!, $password: String!) {\n  resetStudentPassword(email: $email, token: $token, password: $password) {\n    message\n  }\n}"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

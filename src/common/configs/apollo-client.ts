@@ -14,8 +14,8 @@ if (process.env.GRAPHQL_BASE_URL === undefined) {
   throw new Error("GRAPHQL_BASE_URL is undefined");
 }
 
-if (process.env.GRAPGQL_WS_BASE_URL === undefined) {
-  throw new Error("GRAPGQL_WS_BASE_URL is undefined");
+if (process.env.GRAPHQL_WS_BASE_URL === undefined) {
+  throw new Error("GRAPHQL_WS_BASE_URL is undefined");
 }
 
 // apollo http link
@@ -27,7 +27,7 @@ const httpLink = createHttpLink({
 const wsLink = new GraphQLWsLink(
   createClient({
     // @ts-ignore
-    url: process.env.GRAPGQL_WS_BASE_URL,
+    url: process.env.GRAPHQL_WS_BASE_URL,
     connectionParams() {
       // get the authentication token from local storage if it exists
       const token = sessionStorage.getItem("token");
