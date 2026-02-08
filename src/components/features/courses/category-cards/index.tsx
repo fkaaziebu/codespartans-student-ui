@@ -1,7 +1,9 @@
+"use client";
 import { ArrowRight, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-// Category Cards Component
 export const CategoryCards = () => {
+  const router = useRouter();
   const categories = [
     {
       id: 1,
@@ -37,6 +39,11 @@ export const CategoryCards = () => {
         {categories.map((category) => (
           <div
             key={category.id}
+            onClick={() =>
+              router.push(
+                `/courses/search?q=${encodeURIComponent(category.title)}`,
+              )
+            }
             className={`bg-gradient-to-br ${category.color} overflow-hidden shadow-lg hover:shadow-xl transition-shadow cursor-pointer group`}
           >
             <div className="h-40 bg-gradient-to-br opacity-50"></div>

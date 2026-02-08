@@ -1,11 +1,11 @@
 "use client";
 import { Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
-export default function OAuthConsentPage() {
+function OAuthConsentInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
@@ -124,5 +124,13 @@ export default function OAuthConsentPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OAuthConsentPage() {
+  return (
+    <Suspense>
+      <OAuthConsentInner />
+    </Suspense>
   );
 }

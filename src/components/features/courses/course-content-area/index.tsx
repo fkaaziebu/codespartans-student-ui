@@ -1,9 +1,9 @@
 import { CategoryCards } from "../category-cards";
 import { HeroBanner } from "../hero-banner";
+import { MeilisearchCourseSection } from "../meilisearch-course-section";
 import { SkillsSection } from "../skills-section";
 import { TrustedSection } from "../trusted-comanies-section";
 
-// Main CourseContentArea
 export const CourseContentArea = () => {
   return (
     <div className="min-h-screen bg-white">
@@ -11,6 +11,17 @@ export const CourseContentArea = () => {
         <HeroBanner />
         <CategoryCards />
         <SkillsSection />
+        <MeilisearchCourseSection
+          title="Popular Courses"
+          subtitle="Courses loved by learners on Codespartans."
+          showAllLink="/courses/search?q="
+        />
+        <MeilisearchCourseSection
+          title="Recently Added"
+          subtitle="Fresh courses just added to the platform."
+          sort={["inserted_at:desc"]}
+          showAllLink="/courses/search?q="
+        />
         <TrustedSection />
       </div>
     </div>

@@ -567,6 +567,7 @@ export type Query = {
   listCartCategories: Array<Category>;
   listCartCourses: Array<Course>;
   listCourses: CourseConnection;
+  listCoursesForOrganization: CourseConnection;
   listInstructorQuestionsForVersion: QuestionConnection;
   listInstructors: InstructorConnection;
   listOrganizationCourses: CourseConnection;
@@ -634,6 +635,12 @@ export type QueryListAdminsArgs = {
 
 
 export type QueryListCoursesArgs = {
+  pagination?: InputMaybe<PaginationInput>;
+  searchTerm?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryListCoursesForOrganizationArgs = {
   pagination?: InputMaybe<PaginationInput>;
   searchTerm?: InputMaybe<Scalars['String']['input']>;
 };

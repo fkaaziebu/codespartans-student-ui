@@ -8,8 +8,10 @@ import { MeiliSearch } from "meilisearch";
 type MeilisearchCourse = {
   id: string;
   title: string;
+  description?: string;
   avatar_url?: string;
   price?: number;
+  level?: string;
   domains?: string[];
   instructor?: {
     name?: string;
@@ -23,22 +25,12 @@ const meiliClient = new MeiliSearch({
 
 const MEILI_INDEX = process.env.MEILI_INDEX || "";
 
-const tabs = [
-  { label: "Science related courses", query: "Science" },
-  { label: "Artificial Intelligence (AI)", query: "AI" },
-  { label: "Python", query: "Python" },
-  { label: "Microsoft Excel", query: "Excel" },
-  { label: "AI Agents & Agentic AI", query: "AI Agents" },
-  { label: "Digital Marketing", query: "Digital Marketing" },
-  { label: "Amazon AWS", query: "AWS" },
-];
-
-const SkillCourseCard = ({ course }: { course: MeilisearchCourse }) => {
+const SectionCourseCard = ({ course }: { course: MeilisearchCourse }) => {
   const router = useRouter();
 
   return (
     <div
-      className="bg-white shadow-md hover:shadow-lg transition-shadow overflow-hidden cursor-pointer"
+      className="bg-white shadow-md hover:shadow-lg transition-shadow overflow-hidden cursor-pointer min-w-[260px] max-w-[300px] flex-shrink-0"
       onClick={() => router.push(`/courses/${course.id}`)}
     >
       {course.avatar_url && (
@@ -85,21 +77,33 @@ const SkillCourseCard = ({ course }: { course: MeilisearchCourse }) => {
   );
 };
 
-export const SkillsSection = () => {
-  const [activeTab, setActiveTab] = useState(0);
+export const MeilisearchCourseSection = ({
+  title,
+  subtitle,
+  query,
+  sort,
+  limit = 8,
+  showAllLink,
+}: {
+  title: string;
+  subtitle?: string;
+  query?: string;
+  sort?: string[];
+  limit?: number;
+  showAllLink?: string;
+}) => {
   const [courses, setCourses] = useState<MeilisearchCourse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     const fetchCourses = async () => {
-      setIsLoading(true);
       try {
         const index = meiliClient.index(MEILI_INDEX);
-        const results = await index.search<MeilisearchCourse>(
-          tabs[activeTab].query,
-          { limit: 4 },
-        );
+        const results = await index.search<MeilisearchCourse>(query || "", {
+          limit,
+          ...(sort && sort.length > 0 ? { sort } : {}),
+        });
 
         setCourses(results.hits);
       } catch (error) {
@@ -110,69 +114,39 @@ export const SkillsSection = () => {
     };
 
     fetchCourses();
-  }, [activeTab]);
+  }, [query, limit, sort]);
+
+  if (!isLoading && courses.length === 0) return null;
 
   return (
-    <div className="mt-20">
-      <h2 className="text-3xl font-bold text-gray-900 mb-2">
-        Skills to transform your career and life
-      </h2>
-      <p className="text-gray-600 mb-8">
-        From critical skills to technical topics, Codespartans supports your
-        professional development.
-      </p>
-
-      <div className="flex gap-8 border-b border-gray-200 mb-8 overflow-x-auto">
-        {tabs.map((tab, index) => (
-          <button
-            key={index}
-            onClick={() => setActiveTab(index)}
-            className={`pb-4 whitespace-nowrap font-medium transition-colors ${
-              activeTab === index
-                ? "text-gray-900 border-b-2 border-gray-900"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+    <div className="mt-16">
+      <h2 className="text-2xl font-bold text-gray-900 mb-1">{title}</h2>
+      {subtitle && <p className="text-gray-600 mb-6">{subtitle}</p>}
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="bg-gray-100 animate-pulse h-72 rounded" />
           ))}
         </div>
-      ) : courses.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {courses.map((course) => (
-            <SkillCourseCard key={course.id} course={course} />
-          ))}
-        </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-16 mb-8 bg-gray-50 rounded-lg">
-          <p className="text-gray-500 text-lg font-medium">
-            No courses found for &quot;{tabs[activeTab].label}&quot;
-          </p>
-          <p className="text-gray-400 text-sm mt-2">
-            Try selecting a different category above.
-          </p>
+        <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide">
+          {courses.map((course) => (
+            <SectionCourseCard key={course.id} course={course} />
+          ))}
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={() =>
-          router.push(
-            `/courses/search?q=${encodeURIComponent(tabs[activeTab].query)}`,
-          )
-        }
-        className="text-purple-600 font-semibold flex items-center gap-2 hover:text-purple-700"
-      >
-        Show all {tabs[activeTab].label} courses
-        <ArrowRight size={18} />
-      </button>
+      {showAllLink && (
+        <button
+          type="button"
+          onClick={() => router.push(showAllLink)}
+          className="mt-4 text-purple-600 font-semibold flex items-center gap-2 hover:text-purple-700"
+        >
+          Show all courses
+          <ArrowRight size={18} />
+        </button>
+      )}
     </div>
   );
 };

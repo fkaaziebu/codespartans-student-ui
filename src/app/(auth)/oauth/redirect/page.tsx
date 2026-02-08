@@ -1,9 +1,9 @@
 "use client";
 import { Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 
-export default function OAuthRedirectPage() {
+function OAuthRedirectInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -35,5 +35,13 @@ export default function OAuthRedirectPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OAuthRedirectPage() {
+  return (
+    <Suspense>
+      <OAuthRedirectInner />
+    </Suspense>
   );
 }
