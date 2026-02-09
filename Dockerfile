@@ -13,8 +13,13 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+ENV SSE_URL=http://138.68.167.20:4000
+ENV REST_BASE_URL=http://138.68.167.20:4000
 ENV GRAPHQL_BASE_URL=http://138.68.167.20:4000/graphql
 ENV GRAPHQL_WS_BASE_URL=http://138.68.167.20:4000/graphql-ws
+ENV MEILI_URL=http://138.68.167.20:7700
+ENV MEILI_MASTER_KEY=password
+ENV MEILI_INDEX=codespartans
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
