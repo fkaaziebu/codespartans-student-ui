@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "http",
-        hostname: "64.227.44.83",
+        hostname: "ec2-35-156-40-144.eu-central-1.compute.amazonaws.com",
       },
     ],
   },
