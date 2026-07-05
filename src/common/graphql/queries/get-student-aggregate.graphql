@@ -1,0 +1,25 @@
+query GetStudentAggregate($categoryId: String) {
+  getStudentAggregate(categoryId: $categoryId) {
+    state
+    message
+    aggregate_range
+    required_subjects_count
+    tested_required_subjects_count
+    category_id
+    category_name
+    grading_system
+    courses_with_test_taken {
+      course_id
+      course_title
+      is_mandatory
+      score
+      grade
+      date_taken
+    }
+    courses_without_test_taken {
+      course_id
+      course_title
+      is_mandatory
+    }
+  }
+}

@@ -1,0 +1,7 @@
+mutation StartAssignedTest($assignmentId: String!, $mode: TestModeType) {
+    startAssignedTest(assignmentId: $assignmentId, mode: $mode) {
+        id
+        status
+        course_id
+    }
+}

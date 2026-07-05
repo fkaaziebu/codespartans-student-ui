@@ -1,19 +1,62 @@
 "use client";
-import { Loader2 } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Suspense, useEffect, useState } from "react";
 
 function OAuthConsentInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const [token, setToken] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [termsChecked, setTermsChecked] = useState(false);
+  const [termsError, setTermsError] = useState<string | null>(null);
 
-  const email = searchParams.get("email") || "";
-  const firstName = searchParams.get("firstName") || "";
-  const lastName = searchParams.get("lastName") || "";
+  useEffect(() => {
+    const rawToken = searchParams.get("token");
+    if (!rawToken) {
+      router.push("/oauth/failed");
+      return;
+    }
+
+    setToken(rawToken);
+    setIsInitialLoading(true);
+    setErrorMessage(null);
+
+    fetch(`/api/v1/students/auth/consent/info?token=${encodeURIComponent(rawToken)}`)
+      .then(async (res) => {
+        if (res.status === 401 || res.status === 400) {
+          router.push("/oauth/failed");
+          return;
+        }
+        if (res.status === 429) {
+          setErrorMessage("Too many attempts. Please wait a moment and try again.");
+          setIsInitialLoading(false);
+          return;
+        }
+        if (!res.ok) {
+          setErrorMessage("Something went wrong. Please try again.");
+          setIsInitialLoading(false);
+          return;
+        }
+        const data = await res.json();
+        setEmail(data.email ?? "");
+        setFirstName(data.firstName ?? "");
+        setLastName(data.lastName ?? "");
+        setIsInitialLoading(false);
+      })
+      .catch(() => {
+        setErrorMessage("Something went wrong. Please try again.");
+        setIsInitialLoading(false);
+      });
+  }, [searchParams, router, retryCount]);
 
   const handleConsent = async (consent: "yes" | "no") => {
     if (consent === "no") {
@@ -21,18 +64,38 @@ function OAuthConsentInner() {
       return;
     }
 
+    if (!termsChecked) {
+      setTermsError("You must accept the terms to continue");
+      return;
+    }
+
     setIsLoading(true);
     setErrorMessage(null);
+    setSessionExpired(false);
 
     try {
-      const response = await fetch(
-        `${process.env.REST_BASE_URL}/v1/students/auth/consent`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ firstName, lastName, email, consent }),
-        },
-      );
+      const response = await fetch("/api/auth/consent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ consent, token }),
+      });
+
+      if (response.status === 401) {
+        setSessionExpired(true);
+        setIsLoading(false);
+        return;
+      }
+
+      if (response.status === 429) {
+        setErrorMessage("Too many attempts. Please wait a moment and try again.");
+        setIsLoading(false);
+        return;
+      }
+
+      if (response.status === 400) {
+        router.push("/oauth/failed");
+        return;
+      }
 
       if (!response.ok) {
         throw new Error("Failed to process consent. Please try again.");
@@ -55,72 +118,185 @@ function OAuthConsentInner() {
     }
   };
 
+  if (isInitialLoading) {
+    return (
+      <div className="signup-right" style={{ width: "100%" }}>
+        <div className="signup-form-card" style={{ textAlign: "center" }}>
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              margin: "0 auto 16px",
+              borderRadius: "50%",
+              border: "3px solid var(--border)",
+              borderTopColor: "var(--blue)",
+              animation: "spin 0.8s linear infinite",
+            }}
+          />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          <div className="su-form-sub">Loading…</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (sessionExpired) {
+    return (
+      <div className="signup-right" style={{ width: "100%" }}>
+        <div className="signup-form-card" style={{ textAlign: "center" }}>
+          <div className="su-form-title">Session expired</div>
+          <div className="su-form-sub">
+            Your session has expired. Please sign in again to continue.
+          </div>
+          <Link
+            href="/signin"
+            className="btn btn-primary"
+            style={{ display: "block", marginTop: 16, textAlign: "center" }}
+          >
+            Sign in again
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-purple-50 px-4 py-12">
-      <div className="w-full max-w-md border px-5 py-16 rounded-2xl bg-purple-100">
-        <div className="space-y-2 text-center mb-8">
-          <h1 className="text-3xl font-bold tracking-tight text-purple-900 rounded-full bg-purple-200 h-16 w-16 mx-auto flex justify-center items-center">
-            CS
-          </h1>
-          <p className="text-xl font-semibold text-purple-900">Codespartans</p>
+    <div className="signup-right" style={{ width: "100%" }}>
+      <div className="signup-form-card">
+        <div className="su-form-title">Create your account</div>
+        <div className="su-form-sub">
+          No account was found for your Google email. Would you like to create a
+          new account?
         </div>
 
-        <div className="flex flex-col gap-4">
-          <h2 className="text-lg font-semibold text-purple-900 text-center">
-            Create your account
-          </h2>
-          <p className="text-sm text-gray-600 text-center">
-            No account was found for your Google email. Would you like to create
-            a new Codespartans account?
-          </p>
+        {errorMessage && (
+          <div className="ferr" style={{ display: "block", marginBottom: 12 }}>
+            {errorMessage}
+            {errorMessage.startsWith("Something went wrong") && (
+              <button
+                className="btn"
+                style={{ marginTop: 8, width: "100%" }}
+                onClick={() => setRetryCount((c) => c + 1)}
+                type="button"
+              >
+                Retry
+              </button>
+            )}
+          </div>
+        )}
 
-          <div className="bg-purple-50 border border-purple-300 rounded-lg p-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Name</span>
-              <span className="text-purple-900 font-medium">
-                {firstName} {lastName}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Email</span>
-              <span className="text-purple-900 font-medium">{email}</span>
+        <div
+          style={{
+            background: "var(--bg2)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--r)",
+            padding: "12px 16px",
+            marginBottom: 20,
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: 13,
+            }}
+          >
+            <span style={{ color: "var(--t3)" }}>Name</span>
+            <span style={{ color: "var(--t1)", fontWeight: 600 }}>
+              {firstName} {lastName}
+            </span>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: 13,
+            }}
+          >
+            <span style={{ color: "var(--t3)" }}>Email</span>
+            <span style={{ color: "var(--t1)", fontWeight: 600 }}>{email}</span>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <div className="terms-row">
+            <div
+              className={`custom-check${termsChecked ? " checked" : ""}`}
+              onClick={() => {
+                setTermsChecked((v) => !v);
+                setTermsError(null);
+              }}
+            />
+            <div
+              className="terms-text"
+              onClick={() => {
+                setTermsChecked((v) => !v);
+                setTermsError(null);
+              }}
+            >
+              I agree to CodeSpartans&apos;{" "}
+              <a
+                href={`${process.env.LANDING_URL}/terms`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Terms of Service
+              </a>{" "}
+              and{" "}
+              <a
+                href={`${process.env.LANDING_URL}/terms`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Privacy Policy
+              </a>
+              .
             </div>
           </div>
-
-          {errorMessage && (
-            <Alert className="bg-red-50 border-red-200">
-              <AlertDescription className="text-red-800">
-                {errorMessage}
-              </AlertDescription>
-            </Alert>
+          {termsError && (
+            <div className="ferr" style={{ display: "block", marginTop: 6 }}>
+              {termsError}
+            </div>
           )}
+        </div>
 
-          <div className="flex gap-3 mt-4">
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1 border-purple-300 text-purple-900 hover:bg-purple-200 py-6 cursor-pointer"
-              onClick={() => handleConsent("no")}
-              disabled={isLoading}
-            >
-              No, go back
-            </Button>
-            <Button
-              type="button"
-              className="flex-1 bg-purple-900 hover:bg-purple-950 py-6 cursor-pointer"
-              onClick={() => handleConsent("yes")}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                "Yes, create account"
-              )}
-            </Button>
-          </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            className="btn"
+            style={{ flex: 1 }}
+            onClick={() => handleConsent("no")}
+            disabled={isLoading}
+            type="button"
+          >
+            No, go back
+          </button>
+          <button
+            className="btn btn-primary"
+            style={{ flex: 1 }}
+            onClick={() => handleConsent("yes")}
+            disabled={isLoading}
+            type="button"
+          >
+            {isLoading ? "Creating…" : "Yes, create account"}
+          </button>
+        </div>
+
+        <div
+          className="text-xs text-muted mt12"
+          style={{ textAlign: "center" }}
+        >
+          Already have an account?{" "}
+          <Link
+            href="/signin"
+            style={{ color: "var(--blue)", fontWeight: 600 }}
+          >
+            Sign in
+          </Link>
         </div>
       </div>
     </div>

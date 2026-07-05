@@ -9,6 +9,81 @@ Indicates exactly one field must be supplied and this field must not be `null`.
 """
 directive @oneOf on INPUT_OBJECT
 
+type AccountDeletionResponse {
+  message: String!
+  deletionScheduledFor: DateTime
+  status: AccountStatus!
+}
+
+enum AccountStatus {
+  ACTIVE
+  PENDING_DELETION
+  DELETED
+}
+
+type ActivateDemoResponse {
+  access_token: String!
+  org_name: String!
+  email: String!
+  expires_at: String!
+}
+
+input ActivateParentDemoInput {
+  demo_code: String!
+  password: String!
+}
+
+input ActivateSchoolDemoInput {
+  demo_code: String!
+  password: String!
+}
+
+input ActivateStudentDemoInput {
+  demo_code: String!
+  password: String!
+}
+
+type ActivityConnection {
+  edges: [ActivityResponseEdge!]!
+  pageInfo: PageInfo!
+  count: Int!
+}
+
+type ActivityResponse {
+  activity_date: DateTime!
+  score: Float!
+  questions_done: Int!
+  course_title: String
+}
+
+type ActivityResponseEdge {
+  cursor: String!
+  node: ActivityResponse!
+}
+
+input AddChildInput {
+  full_name: String!
+  class_level: ClassLevel!
+  target_exam: String!
+  school_name: String
+}
+
+type AddChildResponse {
+  message: String!
+  pin: String!
+}
+
+input AddSchoolStudentInput {
+  full_name: String!
+  class_level: ClassLevel!
+  target_exam: String!
+}
+
+type AddStudentResponse {
+  message: String!
+  pin: String!
+}
+
 type Admin {
   id: ID!
   name: String!
@@ -56,6 +131,97 @@ enum AdminStatusType {
   INACTIVE
 }
 
+type AlertAction {
+  label: String!
+  variant: String!
+  href: String!
+}
+
+type AlertResponse {
+  id: String!
+  alert_type: String!
+  icon: String!
+  icon_bg: String!
+  title: String!
+  description: String!
+  time_label: String!
+  is_unread: Boolean!
+  actions: [AlertAction!]!
+}
+
+enum ApproximateStudents {
+  UNDER_50
+  BETWEEN_50_AND_100
+  BETWEEN_100_AND_300
+  BETWEEN_300_AND_500
+  ABOVE_500
+}
+
+type AttemptConnection {
+  edges: [AttemptResponseEdge!]!
+  pageInfo: PageInfo!
+  count: Int!
+}
+
+input AttemptFilterInput {
+  from: DateTime
+  to: DateTime
+}
+
+type AttemptResponse {
+  id: ID!
+  status: TestStatusType!
+  mode: TestModeType!
+  test_suite: TestSuite
+  submitted_answers: [SubmittedAnswer!]
+  time_events: [TimeEvent!]
+  recommendations: [Recommendation!]
+  course_id: String!
+  course_category: String
+  assignment: TestAssignment
+  course_title: String!
+  score: Float!
+  date_taken: DateTime!
+  correct: Int!
+  wrong: Int!
+  time_taken: Float!
+  trend: Float
+}
+
+type AttemptResponseEdge {
+  cursor: String!
+  node: AttemptResponse!
+}
+
+type BookDemoResponse {
+  message: String!
+}
+
+input BookParentFreeDemoInput {
+  full_name: String!
+  email: String!
+  target_exams: [String!]!
+}
+
+input BookSchoolFreeDemoInput {
+  name: String!
+  school_name: String!
+  role: SchoolDemoRole!
+  approximate_students: ApproximateStudents!
+  email: String!
+  whatsapp_number: String!
+}
+
+input BookStudentFreeDemoInput {
+  full_name: String!
+  email: String!
+  target_exam: String!
+}
+
+input BulkEnrollStudentsInput {
+  students: [AddSchoolStudentInput!]!
+}
+
 type Cart {
   id: ID!
   student: Student
@@ -67,9 +233,17 @@ type Category {
   id: ID!
   name: String!
   avatar_url: String!
+  date_of_exams: DateTime
+  exam_duration_days: Int
   organization: Organization
-  students: [Student!]
+  subscribed_students: [Student!]
   courses: [Course!]
+}
+
+type CategoryCountdownResponse {
+  categoryName: String!
+  countdown: Int
+  exam_duration_days: Int
 }
 
 input CategoryInfoInput {
@@ -84,6 +258,48 @@ type Checkout {
   categories: [Category!]
 }
 
+type Child {
+  id: ID!
+  full_name: String!
+  class_level: ClassLevel!
+  target_exam: String!
+  school_name: String
+  username: String
+  parent: Parent
+  student: Student
+}
+
+type ChildConnection {
+  edges: [ChildEdge!]!
+  pageInfo: PageInfo!
+  count: Int!
+}
+
+type ChildEdge {
+  cursor: String!
+  node: Child!
+}
+
+type ChildStatsResponse {
+  avg_score: Float!
+  avg_score_percent_diff: Float!
+  current_streak_count: Int!
+  best_streak_count: Int!
+  total_questions_done: Int!
+  total_questions_percent_diff: Float!
+  sessions_this_week: Int!
+}
+
+"""Student class level"""
+enum ClassLevel {
+  JHS1
+  JHS2
+  JHS3
+  SHS1
+  SHS2
+  SHS3
+}
+
 type Coupon {
   id: ID!
   organization: Organization
@@ -95,6 +311,7 @@ type Course {
   title: String!
   avatar_url: String!
   description: String!
+  is_mandatory: Boolean!
   domains: [DomainType!]!
   level: LevelType!
   price: Float!
@@ -135,6 +352,7 @@ type CourseResponse {
   title: String!
   avatar_url: String!
   description: String!
+  is_mandatory: Boolean!
   domains: [DomainType!]!
   level: LevelType!
   price: Float!
@@ -169,11 +387,41 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+type DayStreakResponse {
+  date: String!
+  is_active: Boolean!
+  count: Int!
+}
+
+enum DemoStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CONVERTED
+}
+
 """Course domains"""
 enum DomainType {
   SCIENCE
   ENGLISH
   MATHEMATICS
+}
+
+type EnrollStudentResult {
+  full_name: String!
+  username: String!
+  pin: String!
+}
+
+"""Parent gender"""
+enum Gender {
+  Male
+  Female
+}
+
+type InitiatePaymentResponse {
+  authorization_url: String!
+  reference: String!
 }
 
 type Instructor {
@@ -251,13 +499,91 @@ enum LevelType {
   ADVANCED
 }
 
+input LoginChildInput {
+  temp_token: String!
+  pin: String!
+}
+
+type LoginChildResponse {
+  id: ID!
+  full_name: String!
+  class_level: ClassLevel!
+  target_exam: String!
+  school_name: String
+  username: String
+  parent: Parent
+  student: Student
+  token: String!
+  refresh_token: String!
+}
+
+input LoginParentInput {
+  email: String!
+  password: String!
+}
+
+type LoginParentResponse {
+  id: ID!
+  first_name: String!
+  last_name: String!
+  email: String!
+  whatsapp_number: String
+  gender: Gender!
+  is_setup_completed: Boolean!
+  children: [Child!]
+  token: String!
+  refresh_token: String
+  account_status: AccountStatus
+  deletion_scheduled_for: DateTime
+}
+
+input LoginSchoolStudentInput {
+  temp_token: String!
+  pin: String!
+}
+
+type LoginSchoolStudentResponse {
+  id: ID!
+  full_name: String!
+  class_level: ClassLevel!
+  target_exam: String!
+  username: String
+  organization: Organization
+  student: Student
+  token: String!
+  refresh_token: String!
+}
+
+type MonthlyReportResponse {
+  month: Int!
+  year: Int!
+  avg_score: Float!
+  total_questions: Int!
+  streak_days: Int!
+}
+
 type Mutation {
   registerStudent(name: String!, email: String!, password: String!): RegisterResponse!
+  refreshStudentToken(refresh_token: String!): RefreshTokenResponse!
+  completeStudentAccountValidation(email: String!, validation_code: String!): PasswordResetResponse!
+  resendAccountValidationCode(email: String!): PasswordResetResponse!
   requestStudentPasswordReset(email: String!): PasswordResetResponse!
   resetStudentPassword(email: String!, token: String!, password: String!): PasswordResetResponse!
+  changePassword(currentPassword: String!, newPassword: String!): PasswordResetResponse!
+  changePin(currentPin: String!, newPin: String!): PasswordResetResponse!
+  requestStudentAccountDeletion: AccountDeletionResponse!
+  verifyCancellationOtp(otp: String!): RegisterParentResponse!
+  cancelStudentAccountDeletion: StudentLoginResponse!
   registerOrganization(name: String!, email: String!, password: String!): RegisterResponse!
   registerInstructor(name: String!, email: String!, password: String!): Instructor!
   registerAdmin(name: String!, email: String!, password: String!): Admin!
+  bookSchoolFreeDemo(input: BookSchoolFreeDemoInput!): BookDemoResponse!
+  bookParentFreeDemo(input: BookParentFreeDemoInput!): BookDemoResponse!
+  bookStudentFreeDemo(input: BookStudentFreeDemoInput!): BookDemoResponse!
+  activateSchoolDemo(input: ActivateSchoolDemoInput!): ActivateDemoResponse!
+  activateStudentDemo(input: ActivateStudentDemoInput!): StudentLoginResponse!
+  activateParentDemo(input: ActivateParentDemoInput!): LoginParentResponse!
+  initiatePayment(planId: String!, children: [String!]!): InitiatePaymentResponse!
   addCourseVersionReview(versionId: String!, reviewInfo: ReviewInfoInput!): Review!
   addReviewIssue(reviewId: String!, issueInfo: IssueInfoInput!): Issue!
   closeIssue(issueId: String!): Issue!
@@ -271,17 +597,46 @@ type Mutation {
   updateQuestion(questionId: String!, question: QuestionInput!): Question!
   requestCourseVersionReview(versionId: String!): ReviewRequest!
   addCourseToCart(courseId: String!): Cart!
+  completeSetup(categoryId: String!, courseIds: [String!]!): Student!
   removeCourseFromCart(courseId: String!): Cart!
   addCategoryToCart(categoryId: String!): Cart!
+  changeStudentPassword(currentPassword: String!, newPassword: String!): Student!
   createCheckout(autoApproveSubscription: Boolean!, checkoutFromCart: Boolean, courseId: String): Checkout!
   assignCourseVersionForReview(versionId: String!, adminId: String!): Version!
   createCategory(categoryInfo: CategoryInfoInput!): Category!
   addCoursesToCategory(categoryId: String!, courseIds: [String!]!): Category!
-  startTest(suiteId: String!, mode: String): Test!
+  updateCategoryCountdown(categoryId: String!, dateOfExams: DateTime!, examDurationDays: Int!): Boolean!
+  startTest(suiteId: String!, mode: TestModeType): Test!
   pauseTest(testId: String!): Test!
   resumeTest(testId: String!): Test!
   endTest(testId: String!): Test!
   submitAnswer(testId: String!, questionId: String!, timeRange: String!, answer: String!, isFlagged: Boolean!): SubmittedAnswer!
+  startAssignedTest(assignmentId: String!, mode: TestModeType): Test!
+  registerParent(input: RegisterParentInput!): RegisterParentResponse!
+  verifyParentAccount(input: VerifyParentInput!): RegisterParentResponse!
+  resendParentAccountValidationCode(email: String!): RegisterParentResponse!
+  loginParent(input: LoginParentInput!): LoginParentResponse!
+  refreshParentToken(refresh_token: String!): RefreshTokenResponse!
+  requestParentPasswordReset(email: String!): RegisterParentResponse!
+  resetParentPassword(email: String!, token: String!, password: String!): RegisterParentResponse!
+  changeParentPassword(currentPassword: String!, newPassword: String!): RegisterParentResponse!
+  setupParentAccount(input: SetupParentAccountInput!): [SetupChildResult!]!
+  addChild(input: AddChildInput!): AddChildResponse!
+  resetChildPin(childId: String!): AddChildResponse!
+  verifyChildUsername(input: VerifyChildUsernameInput!): VerifyChildUsernameResponse!
+  loginChild(input: LoginChildInput!): LoginChildResponse!
+  assignTestToChild(childId: String!, suiteId: String!, note: String): TestAssignment!
+  requestParentAccountDeletion: AccountDeletionResponse!
+  deleteChild(childId: String!): AccountDeletionResponse!
+  cancelChildDeletion(childId: String!): AccountDeletionResponse!
+  cancelParentAccountDeletion: LoginParentResponse!
+  addSchoolStudent(input: AddSchoolStudentInput!): AddStudentResponse!
+  bulkEnrollStudents(input: BulkEnrollStudentsInput!): [EnrollStudentResult!]!
+  resetStudentPin(studentId: String!): AddStudentResponse!
+  shareStudentLogin(studentId: String!): AddStudentResponse!
+  removeSchoolStudent(studentId: String!): AddStudentResponse!
+  verifySchoolStudentUsername(username: String!): VerifyStudentUsernameResponse!
+  loginSchoolStudent(input: LoginSchoolStudentInput!): LoginSchoolStudentResponse!
 }
 
 type Organization {
@@ -295,12 +650,18 @@ type Organization {
   organizational_categories: [Category!]
   organizational_coupons: [Coupon!]
   requested_reviews: [ReviewRequest!]
+  school_demo: SchoolDemo
 }
 
 type OrganizationConnection {
-  edges: [OrganizationTypeClassEdge!]!
+  edges: [OrganizationEdge!]!
   pageInfo: PageInfo!
   count: Int!
+}
+
+type OrganizationEdge {
+  cursor: String!
+  node: Organization!
 }
 
 type OrganizationLoginResponse {
@@ -314,12 +675,8 @@ type OrganizationLoginResponse {
   organizational_categories: [Category!]
   organizational_coupons: [Coupon!]
   requested_reviews: [ReviewRequest!]
+  school_demo: SchoolDemo
   token: String!
-}
-
-type OrganizationTypeClassEdge {
-  cursor: String!
-  node: Organization!
 }
 
 type PageInfo {
@@ -336,8 +693,38 @@ input PaginationInput {
   before: String
 }
 
+type Parent {
+  id: ID!
+  first_name: String!
+  last_name: String!
+  email: String!
+  whatsapp_number: String
+  gender: Gender!
+  is_setup_completed: Boolean!
+  children: [Child!]
+}
+
+type ParentSubscription {
+  id: ID!
+  parent: Parent
+  plan: SubscriptionPlan!
+  paystack_reference: String
+  status: SubscriptionStatus!
+  started_at: DateTime!
+  expires_at: DateTime!
+  children: [Child!]
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
 type PasswordResetResponse {
   message: String!
+}
+
+enum PlanInterval {
+  MONTHLY
+  QUARTERLY
+  YEARLY
 }
 
 type Query {
@@ -347,6 +734,11 @@ type Query {
   studentProfile: Student!
   listOrganizations(searchTerm: String, pagination: PaginationInput): OrganizationConnection!
   loginOrganization(email: String!, password: String!): OrganizationLoginResponse!
+  listSubscriptionPlans: [SubscriptionPlan!]!
+  getMySubscription: ParentSubscription
+  listMySubscriptions: [ParentSubscription!]!
+  getMyStudentSubscription: StudentSubscription
+  listMyStudentSubscriptions: [StudentSubscription!]!
   listQuestionsForVersion(versionId: String!, searchTerm: String, pagination: PaginationInput): QuestionConnection!
   listAssignedVersions: VersionConnection!
   getCourseVersion(versionId: String!): VersionResponse!
@@ -358,22 +750,51 @@ type Query {
   listCourses(searchTerm: String, pagination: PaginationInput): CourseConnection!
   getOrganizationCourse(courseId: String!): StudentCourseResponse!
   listOrganizationCourses(organizationId: String, searchTerm: String, pagination: PaginationInput, filter: CourseFilterInput): CourseConnection!
+  listOrganizationCategories(searchTerm: String): [Category!]!
   listCartCourses: [Course!]!
+  listAttempts(searchTerm: String, filter: AttemptFilterInput, pagination: PaginationInput): AttemptConnection!
+  listCourseSuites(courseId: String!, suiteTypes: [SuiteType!], pagination: PaginationInput): TestSuiteConnection!
+  getActiveTest: Test!
+  getTest(testId: String!): Test!
+  getStudentStats: StudentStatsResponse!
+  getCurrentStreakCount: StreakResponse!
+  studentSubjectProgress(testId: String): [SubjectProgressResponse!]!
+  studentTestTopicProgress(testId: String!): [TestTopicProgressResponse!]!
+  weakSubjectAreas(testId: String): [WeakSubjectAreaResponse!]!
+  getTestScoreHistory(testId: String): [TestScoreHistoryResponse!]!
   listCartCategories: [Category!]!
+  getCategoryCountdown(categoryId: String!): CategoryCountdownResponse!
   getStats: StatsResponse!
   listInstructors(searchTerm: String, pagination: PaginationInput): InstructorConnection!
   listAdmins(searchTerm: String, pagination: PaginationInput): AdminConnection!
   listRequestedReviews(filter: RequestedReviewFilterInput, pagination: PaginationInput): RequestedReviewConnection!
   listCoursesForOrganization(searchTerm: String, pagination: PaginationInput): CourseConnection!
-  getSubscribedCourseDetails(courseId: String!): Course!
+  getSubscribedCourseDetails(courseId: String!, filter: SuiteFilterInput): Course!
   getQuestion(testId: String!): Question!
+  getWeeklyInsight: WeeklyInsight
   testStats(testId: String!): Test!
   getAllAttemptedQuestions(testId: String!): [SubmittedAnswer!]!
+  listMyAssignments: [TestAssignment!]!
+  shareChildLogin(childId: String!): RegisterParentResponse!
+  listParentOrganizationCategories(searchTerm: String): [Category!]!
+  listChildren(pagination: PaginationInput): ChildConnection!
+  getChildStats(childId: String!): ChildStatsResponse!
+  getChildSubjectProgress(childId: String!, courseId: String): [SubjectProgressResponse!]!
+  getChildTestsHistory(childId: String!, pagination: PaginationInput): AttemptConnection!
+  getChildWeakAreas(childId: String!): [WeakSubjectAreaResponse!]!
+  getChildActivity(childId: String!, pagination: PaginationInput): ActivityConnection!
+  getChildStreak(childId: String!): StreakResponse!
+  listChildStreak(childId: String!, month: Int!, year: Int!): [DayStreakResponse!]!
+  listParentAlerts: [AlertResponse!]!
+  listChildMonthlyReports(childId: String!): [MonthlyReportResponse!]!
+  listChildCourses(childId: String!): [Course!]!
+  listChildAssignments(childId: String!): [TestAssignment!]!
+  listSchoolStudents(searchTerm: String, pagination: PaginationInput): SchoolStudentConnection!
 }
 
 type Question {
   id: ID!
-  question_number: Float!
+  question_number: Int!
   description: String!
   hints: [String!]!
   solution_steps: [String!]!
@@ -382,12 +803,25 @@ type Question {
   tags: [QuestionTagType!]!
   correct_answer: String!
   difficulty: QuestionDifficultyType!
-  estimated_time_in_ms: Float!
+  estimated_time_in_ms: Int!
+  class_level: QuestionClassLevel
+  exam_year: Int
+  marks: Int!
   version: Version
 }
 
+"""Syllabus class level the question originates from"""
+enum QuestionClassLevel {
+  JHS_1
+  JHS_2
+  JHS_3
+  SHS_1
+  SHS_2
+  SHS_3
+}
+
 type QuestionConnection {
-  edges: [QuestionTypeClassEdge!]!
+  edges: [QuestionEdge!]!
   pageInfo: PageInfo!
   count: Int!
 }
@@ -397,6 +831,11 @@ enum QuestionDifficultyType {
   EASY
   MEDIUM
   HARD
+}
+
+type QuestionEdge {
+  cursor: String!
+  node: Question!
 }
 
 input QuestionInput {
@@ -409,19 +848,92 @@ input QuestionInput {
   tags: [QuestionTagType!]!
   difficulty: QuestionDifficultyType!
   estimated_time_in_ms: Float!
+  class_level: QuestionClassLevel
+  exam_year: Int
   correct_answer: String!
+  marks: Int
 }
 
 """Question tag types"""
 enum QuestionTagType {
   TAG_GENERAL
-  TAG_ALGORITHM
-  TAG_DATA_STRUCTURE
-  TAG_DATABASE
-  TAG_NETWORK
-  TAG_SECURITY
-  TAG_SYSTEM
-  TAG_WEB
+  TAG_NUMBER_AND_NUMERATION
+  TAG_ALGEBRA
+  TAG_GEOMETRY
+  TAG_MENSURATION
+  TAG_STATISTICS_AND_PROBABILITY
+  TAG_TRIGONOMETRY
+  TAG_CALCULUS
+  TAG_VECTORS_AND_MATRICES
+  TAG_SETS
+  TAG_READING_COMPREHENSION
+  TAG_SUMMARY_WRITING
+  TAG_ESSAY_WRITING
+  TAG_GRAMMAR_AND_USAGE
+  TAG_VOCABULARY
+  TAG_ORAL_ENGLISH
+  TAG_PHYSICAL_PROCESSES
+  TAG_LIFE_PROCESSES
+  TAG_EARTH_AND_SPACE
+  TAG_DIVERSITY_OF_MATTER
+  TAG_GHANA_HISTORY
+  TAG_GOVERNMENT_AND_CITIZENSHIP
+  TAG_ECONOMIC_DEVELOPMENT
+  TAG_POPULATION_AND_DEVELOPMENT
+  TAG_ENVIRONMENT_AND_SOCIETY
+  TAG_CULTURE_AND_VALUES
+  TAG_MECHANICS
+  TAG_WAVES_AND_OPTICS
+  TAG_ELECTRICITY_AND_MAGNETISM
+  TAG_HEAT_AND_THERMODYNAMICS
+  TAG_ATOMIC_AND_NUCLEAR_PHYSICS
+  TAG_MEASUREMENT
+  TAG_ATOMIC_STRUCTURE
+  TAG_CHEMICAL_BONDING
+  TAG_STOICHIOMETRY
+  TAG_ORGANIC_CHEMISTRY
+  TAG_ACIDS_BASES_AND_SALTS
+  TAG_ELECTROCHEMISTRY
+  TAG_PERIODIC_TABLE
+  TAG_AIR_AND_WATER
+  TAG_CELL_BIOLOGY
+  TAG_GENETICS_AND_EVOLUTION
+  TAG_ECOLOGY
+  TAG_HUMAN_PHYSIOLOGY
+  TAG_PLANT_BIOLOGY
+  TAG_MICROORGANISMS_AND_DISEASE
+  TAG_CLASSIFICATION
+  TAG_DEMAND_AND_SUPPLY
+  TAG_PRODUCTION_AND_COSTS
+  TAG_NATIONAL_INCOME
+  TAG_MONEY_AND_BANKING
+  TAG_INTERNATIONAL_TRADE
+  TAG_PUBLIC_FINANCE
+  TAG_MAP_READING
+  TAG_PHYSICAL_GEOGRAPHY
+  TAG_HUMAN_GEOGRAPHY
+  TAG_REGIONAL_GEOGRAPHY
+  TAG_ECONOMIC_GEOGRAPHY
+  TAG_PRECOLONIAL_AFRICA
+  TAG_COLONIAL_PERIOD
+  TAG_INDEPENDENCE_MOVEMENTS
+  TAG_GHANA_POLITICAL_HISTORY
+  TAG_CONSTITUTION_AND_LAW
+  TAG_DEMOCRATIC_INSTITUTIONS
+  TAG_PROSE
+  TAG_POETRY
+  TAG_DRAMA
+  TAG_COMPUTER_HARDWARE
+  TAG_SOFTWARE_AND_APPLICATIONS
+  TAG_INTERNET_AND_NETWORKING
+  TAG_PROGRAMMING_BASICS
+  TAG_DATA_MANAGEMENT
+  TAG_FRENCH_GRAMMAR
+  TAG_FRENCH_VOCABULARY
+  TAG_FRENCH_COMPREHENSION
+  TAG_CHRISTIANITY
+  TAG_ISLAM
+  TAG_AFRICAN_TRADITIONAL_RELIGION
 }
 
 """Question types"""
@@ -429,11 +941,7 @@ enum QuestionType {
   MULTIPLE_CHOICE
   MULTIPLE_SELECT
   FILL_IN
-}
-
-type QuestionTypeClassEdge {
-  cursor: String!
-  node: Question!
+  SHORT_ANSWER
 }
 
 type Recommendation {
@@ -441,12 +949,29 @@ type Recommendation {
   description: String!
 }
 
+type RefreshTokenResponse {
+  access_token: String!
+}
+
+input RegisterParentInput {
+  first_name: String!
+  last_name: String!
+  email: String!
+  whatsapp_number: String!
+  password: String!
+  gender: Gender
+}
+
+type RegisterParentResponse {
+  message: String!
+}
+
 type RegisterResponse {
   message: String!
 }
 
 type RequestedReviewConnection {
-  edges: [ReviewRequestTypeClassEdge!]!
+  edges: [ReviewRequestEdge!]!
   pageInfo: PageInfo!
   count: Int!
 }
@@ -481,7 +1006,7 @@ type ReviewRequest {
   updated_at: DateTime!
 }
 
-type ReviewRequestTypeClassEdge {
+type ReviewRequestEdge {
   cursor: String!
   node: ReviewRequest!
 }
@@ -504,6 +1029,62 @@ enum ReviewStatusType {
   CLOSED
 }
 
+type SchoolDemo {
+  id: ID!
+  name: String!
+  school_name: String!
+  role: SchoolDemoRole!
+  approximate_students: ApproximateStudents!
+  email: String!
+  whatsapp_number: String!
+  demo_code: String!
+  status: DemoStatus!
+  activated_at: DateTime
+  expires_at: DateTime
+  trial_duration_days: Float!
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+enum SchoolDemoRole {
+  PROPRIETOR_OWNER
+  HEADMASTER_PRINCIPAL
+  ACADEMIC_DIRECTOR
+  TEACHER
+  OTHER
+}
+
+type SchoolStudent {
+  id: ID!
+  full_name: String!
+  class_level: ClassLevel!
+  target_exam: String!
+  username: String
+  organization: Organization
+  student: Student
+}
+
+type SchoolStudentConnection {
+  edges: [SchoolStudentEdge!]!
+  pageInfo: PageInfo!
+  count: Int!
+}
+
+type SchoolStudentEdge {
+  cursor: String!
+  node: SchoolStudent!
+}
+
+type SetupChildResult {
+  full_name: String!
+  username: String!
+  pin: String!
+}
+
+input SetupParentAccountInput {
+  children: [AddChildInput!]!
+}
+
 type StatsResponse {
   total_instructors: Float!
   total_admins: Float!
@@ -512,15 +1093,23 @@ type StatsResponse {
   total_completed_reviews: Float!
 }
 
+type StreakResponse {
+  current_streak: Int!
+  best_streak: Int!
+}
+
 type Student {
   id: ID!
   name: String!
   email: String!
+  is_setup_completed: Boolean!
   subscribed_courses: [Course!]
   subscribed_categories: [Category!]
   organizations: [Organization!]
   checkouts: [Checkout!]
   cart: Cart
+  account_status: AccountStatus
+  deletion_scheduled_for: DateTime
 }
 
 type StudentCourseResponse {
@@ -528,6 +1117,7 @@ type StudentCourseResponse {
   title: String!
   avatar_url: String!
   description: String!
+  is_mandatory: Boolean!
   domains: [DomainType!]!
   level: LevelType!
   price: Float!
@@ -549,12 +1139,45 @@ type StudentLoginResponse {
   id: ID!
   name: String!
   email: String!
+  is_setup_completed: Boolean!
   subscribed_courses: [Course!]
   subscribed_categories: [Category!]
   organizations: [Organization!]
   checkouts: [Checkout!]
   cart: Cart
+  account_status: AccountStatus
+  deletion_scheduled_for: DateTime
   token: String!
+  refresh_token: String
+}
+
+type StudentStatsResponse {
+  total_test_taken: Int!
+  total_test_taken_percentage_change: Float!
+  average_score: Float!
+  average_score_percentage_change: Float!
+  study_hours: Float!
+  weak_areas_count: Int!
+}
+
+type StudentSubscription {
+  id: ID!
+  student: Student
+  plan: SubscriptionPlan!
+  paystack_reference: String
+  status: SubscriptionStatus!
+  started_at: DateTime!
+  expires_at: DateTime!
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+type SubjectProgressResponse {
+  subject: String!
+  total: Int!
+  correct: Int!
+  wrong: Int!
+  score: Float!
 }
 
 type SubmittedAnswer {
@@ -563,8 +1186,35 @@ type SubmittedAnswer {
   answer_provided: String!
   hints_used: [String!]!
   is_flagged: Boolean!
+  is_correct: Boolean
+  is_marked: Boolean!
   question: Question
   test: Test
+}
+
+type SubscriptionPlan {
+  id: ID!
+  plan_key: String!
+  name: String!
+  tagline: String
+  description: String
+  price: Float!
+  currency: String!
+  interval: PlanInterval!
+  duration_days: Int!
+  features: [String!]!
+  billing_label: String
+  max_students: Int
+  is_custom: Boolean!
+  is_active: Boolean!
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
 }
 
 """Suite difficulty"""
@@ -574,19 +1224,64 @@ enum SuiteDifficultyType {
   ADVANCED
 }
 
+input SuiteFilterInput {
+  suite_type: SuiteType
+}
+
+"""Suite type — Year-based exam prep, Class level, or Topic focused"""
+enum SuiteType {
+  YEAR
+  YEAR_ONE
+  YEAR_TWO
+  YEAR_THREE
+  MIXED
+  PAST_QUESTIONS
+  CLASS
+  TOPIC
+}
+
 type Test {
   id: ID!
   status: TestStatusType!
   mode: TestModeType!
+  test_suite: TestSuite
   submitted_answers: [SubmittedAnswer!]
-  test_suite: TestSuite!
+  time_events: [TimeEvent!]
   recommendations: [Recommendation!]
+  course_id: String
+  course_category: String
+  assignment: TestAssignment
+}
+
+type TestAssignment {
+  id: ID!
+  status: TestAssignmentStatus!
+  assigned_at: DateTime!
+  completed_at: DateTime
+  note: String
+  parent: Parent
+  child: Child
+  test_suite: TestSuite
+  test: Test
+}
+
+"""Test assignment status"""
+enum TestAssignmentStatus {
+  PENDING
+  COMPLETED
 }
 
 """Test mode"""
 enum TestModeType {
   PROCTURED
   UN_PROCTURED
+}
+
+type TestScoreHistoryResponse {
+  test_id: String!
+  course_title: String!
+  score: Float!
+  date_taken: DateTime!
 }
 
 """Test status"""
@@ -598,11 +1293,47 @@ enum TestStatusType {
 
 type TestSuite {
   id: ID!
-  title: String!
-  description: String!
-  keywords: [String!]!
+  title: String
+  description: String
+  keywords: [String!]
   difficulty: SuiteDifficultyType!
-  questions: [Question!]!
+  suite_type: SuiteType
+  image_url: String
+  questions: [Question!]
+}
+
+type TestSuiteConnection {
+  edges: [TestSuiteEdge!]!
+  pageInfo: PageInfo!
+  count: Int!
+}
+
+type TestSuiteEdge {
+  cursor: String!
+  node: TestSuite!
+}
+
+type TestTopicProgressResponse {
+  topic: String!
+  total: Int!
+  correct: Int!
+  wrong: Int!
+  score: Float!
+}
+
+type TimeEvent {
+  id: ID!
+  type: TimeEventType!
+  recorded_at: DateTime!
+  test: Test
+}
+
+"""Time event type"""
+enum TimeEventType {
+  STARTED
+  PAUSED
+  RESUMED
+  ENDED
 }
 
 input UpdateCourseInfoInput {
@@ -614,9 +1345,26 @@ input UpdateCourseInfoInput {
   currency: CurrencyType
 }
 
+input VerifyChildUsernameInput {
+  username: String!
+}
+
+type VerifyChildUsernameResponse {
+  temp_token: String!
+}
+
+input VerifyParentInput {
+  email: String!
+  code: String!
+}
+
+type VerifyStudentUsernameResponse {
+  temp_token: String!
+}
+
 type Version {
   id: ID!
-  version_number: Float!
+  version_number: Int!
   status: VersionStatusType!
   review_request: ReviewRequest
   assigned_admin: Admin
@@ -636,7 +1384,7 @@ type VersionConnection {
 
 type VersionResponse {
   id: ID!
-  version_number: Float!
+  version_number: Int!
   status: VersionStatusType!
   review_request: ReviewRequest
   assigned_admin: Admin
@@ -662,5 +1410,25 @@ enum VersionStatusType {
   IN_PROGRESS
   APPROVED
   REJECTED
+}
+
+type WeakSubjectAreaResponse {
+  subject: String!
+  error_count: Int!
+  total: Int!
+  accuracy: Float!
+  questions: [Question!]!
+}
+
+type WeeklyInsight {
+  title: String!
+  description: String!
+  suites: [WeeklyInsightSuite!]!
+}
+
+type WeeklyInsightSuite {
+  suite_id: ID!
+  title: String!
+  accuracy: Float!
 }
 

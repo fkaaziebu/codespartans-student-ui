@@ -1,3 +1,4 @@
+@layer theme, base, codespartans, components, utilities;
 @import "tailwindcss";
 @import "tw-animate-css";
 

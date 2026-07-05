@@ -1,0 +1,5 @@
+mutation CompleteStudentAccountValidation($email: String!, $validationCode: String!) {
+  completeStudentAccountValidation(email: $email, validation_code: $validationCode) {
+    message
+  }
+}

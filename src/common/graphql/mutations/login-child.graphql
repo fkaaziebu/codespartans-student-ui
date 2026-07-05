@@ -1,0 +1,22 @@
+mutation LoginChild($input: LoginChildInput!) {
+    loginChild(input: $input) {
+        id
+        full_name
+        class_level
+        target_exam
+        school_name
+        username
+        token
+        refresh_token
+        student {
+            id
+            name
+            email
+            is_setup_completed
+            organizations {
+                id
+                email
+            }
+        }
+    }
+}

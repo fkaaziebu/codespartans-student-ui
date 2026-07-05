@@ -1,0 +1,7 @@
+mutation RequestStudentAccountDeletion {
+  requestStudentAccountDeletion {
+    message
+    deletionScheduledFor
+    status
+  }
+}

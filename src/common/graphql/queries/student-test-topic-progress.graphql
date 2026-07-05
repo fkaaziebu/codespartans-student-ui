@@ -1,0 +1,9 @@
+query StudentTestTopicProgress($testId: String!) {
+  studentTestTopicProgress(testId: $testId) {
+    topic
+    total
+    correct
+    wrong
+    score
+  }
+}

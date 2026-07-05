@@ -3,6 +3,7 @@ import { Star } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { type BaseHit } from "instantsearch.js";
+import { proxyImageUrl } from "@/lib/utils";
 
 type CourseHit = BaseHit & {
   objectID: string;
@@ -33,14 +34,20 @@ export const CourseCard = ({ hit }: { hit: CourseHit }) => {
 
   return (
     <div className="bg-white shadow-md hover:shadow-lg transition-shadow overflow-hidden border border-gray-200 rounded">
-      {avatarUrl && (
+      {avatarUrl ? (
         <Image
-          src={avatarUrl}
+          src={proxyImageUrl(avatarUrl)}
           alt={title}
           width={400}
           height={200}
           className="w-full h-40 object-cover"
         />
+      ) : (
+        <div className="w-full h-40 bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
+          <span className="text-white text-3xl font-bold opacity-60">
+            {title?.charAt(0) ?? "C"}
+          </span>
+        </div>
       )}
 
       <div className="p-4">

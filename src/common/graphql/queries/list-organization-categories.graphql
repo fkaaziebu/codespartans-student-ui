@@ -1,0 +1,17 @@
+query ListOrganizationCategories {
+    listOrganizationCategories {
+        id
+        name
+        courses {
+            id
+            level
+            price
+            title
+            domains
+            description
+            currency
+            avatar_url
+            is_mandatory
+        }
+    }
+}

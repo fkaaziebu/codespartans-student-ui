@@ -2,6 +2,7 @@
 import { BookOpen, CheckCircle, Clock, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { proxyImageUrl } from "@/lib/utils";
 
 type CourseNode = {
   id: string;
@@ -53,7 +54,7 @@ export default function CourseCard({ course, onCourseClick }: CourseCardProps) {
       <div className="relative w-full h-48 bg-gradient-to-br from-gray-800 to-gray-600 rounded-t-lg flex items-center justify-center">
         {course.avatar_url ? (
           <img
-            src={course.avatar_url}
+            src={proxyImageUrl(course.avatar_url)}
             alt={course.title}
             className="w-full h-full object-cover rounded-t-lg"
           />

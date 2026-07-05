@@ -5,6 +5,8 @@ query TestStats($testId: String!) {
             hints_used
             id
             is_flagged
+            is_correct
+            is_marked
             question {
                 correct_answer
                 description
@@ -12,6 +14,7 @@ query TestStats($testId: String!) {
                 estimated_time_in_ms
                 hints
                 id
+                marks
                 options
                 question_number
                 solution_steps
@@ -23,12 +26,14 @@ query TestStats($testId: String!) {
         status
         id
         test_suite {
+            id
             questions {
                 correct_answer
                 description
                 difficulty
                 estimated_time_in_ms
                 id
+                marks
                 options
                 question_number
                 solution_steps

@@ -16,6 +16,8 @@ mutation SubmitAnswer(
         hints_used
         id
         is_flagged
+        is_correct
+        is_marked
         question_id
     }
 }

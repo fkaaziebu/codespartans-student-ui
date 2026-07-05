@@ -1,37 +1,88 @@
 "use client";
-import { Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
+import { useStudentProfile } from "@/common/hooks/queries";
 
 function OAuthRedirectInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { studentProfile } = useStudentProfile();
 
   useEffect(() => {
     const token = searchParams.get("token");
-    const organizationId = searchParams.get("organizationId");
+    const refreshToken = searchParams.get("refreshToken");
+    const email = searchParams.get("email");
+    const requiresValidation = searchParams.get("requiresValidation");
+    const accountStatus = searchParams.get("accountStatus");
+    const deletionScheduledFor = searchParams.get("deletionScheduledFor");
 
-    if (token && organizationId) {
-      sessionStorage.setItem("token", token);
-      sessionStorage.setItem("organizationId", organizationId);
-      router.push("/courses");
-    } else {
-      router.push("/login");
+    if (requiresValidation === "true" && email) {
+      router.push(`/validate-account?email=${encodeURIComponent(email)}`);
+      return;
     }
+
+    if (!token) {
+      router.push("/signin");
+      return;
+    }
+
+    if (accountStatus === "PENDING_DELETION") {
+      const params = new URLSearchParams({
+        pendingToken: token,
+        deletionScheduledFor: deletionScheduledFor ?? "",
+      });
+      router.replace(`/signin?${params.toString()}`);
+      return;
+    }
+
+    sessionStorage.setItem("token", token);
+    if (refreshToken) sessionStorage.setItem("refreshToken", refreshToken);
+
+    studentProfile().then((result) => {
+      if (result.error || !result.data?.studentProfile) {
+        router.push("/signin");
+        return;
+      }
+
+      const profile = result.data.studentProfile;
+      const org = profile.organizations?.[0];
+
+      sessionStorage.setItem("organizationId", org?.id ?? "");
+      sessionStorage.setItem("organizationEmail", org?.email ?? "");
+      sessionStorage.setItem(
+        "isSetupCompleted",
+        `${profile.is_setup_completed}`,
+      );
+
+      if (!profile.is_setup_completed) {
+        router.push("/setup");
+      } else {
+        router.push("/dashboard");
+      }
+    });
   }, [searchParams, router]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-purple-50 px-4 py-12">
-      <div className="w-full max-w-md border px-5 py-16 rounded-2xl bg-purple-100 text-center">
-        <div className="space-y-2 mb-8">
-          <h1 className="text-3xl font-bold tracking-tight text-purple-900 rounded-full bg-purple-200 h-16 w-16 mx-auto flex justify-center items-center">
-            CS
-          </h1>
-          <p className="text-xl font-semibold text-purple-900">Codespartans</p>
+    <div className="signup-right" style={{ width: "100%" }}>
+      <div className="signup-form-card" style={{ textAlign: "center" }}>
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            margin: "0 auto 16px",
+            borderRadius: "50%",
+            border: "3px solid var(--border)",
+            borderTopColor: "var(--blue)",
+            animation: "spin 0.8s linear infinite",
+          }}
+        />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
+        <div className="su-form-title" style={{ fontSize: 18 }}>
+          Signing you in…
         </div>
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-purple-900" />
-          <p className="text-purple-900 font-medium">Signing you in...</p>
+        <div className="su-form-sub">
+          Please wait while we complete your sign in.
         </div>
       </div>
     </div>

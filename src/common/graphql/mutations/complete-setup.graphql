@@ -1,0 +1,8 @@
+mutation CompleteSetup($categoryId: String!, $courseIds: [String!]!) {
+    completeSetup(categoryId: $categoryId, courseIds: $courseIds) {
+        id
+        is_setup_completed
+        email
+        name
+    }
+}

@@ -9,7 +9,7 @@ export const QuestionList = ({
   onSelectQuestion,
 }: {
   questions: Question[] | undefined | null;
-  currentQuestion: Question;
+  currentQuestion: Question | undefined;
   answeredQuestions: Set<string>;
   flaggedQuestions: Set<string>;
   onSelectQuestion: (question: Question) => void;

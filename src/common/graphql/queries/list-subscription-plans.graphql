@@ -1,0 +1,14 @@
+query ListSubscriptionPlans {
+  listSubscriptionPlans {
+    id
+    plan_key
+    name
+    tagline
+    price
+    currency
+    interval
+    duration_days
+    features
+    billing_label
+  }
+}

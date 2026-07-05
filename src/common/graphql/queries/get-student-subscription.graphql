@@ -1,0 +1,16 @@
+query GetStudentSubscription {
+  getMyStudentSubscription {
+    id
+    status
+    started_at
+    expires_at
+    plan {
+      id
+      name
+      price
+      currency
+      interval
+      duration_days
+    }
+  }
+}

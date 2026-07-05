@@ -1,0 +1,10 @@
+query GetStudentStats {
+    getStudentStats {
+        total_test_taken
+        total_test_taken_percentage_change
+        average_score
+        average_score_percentage_change
+        study_hours
+        weak_areas_count
+    }
+}

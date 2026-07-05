@@ -11,6 +11,7 @@ import {
 import { useListCartCourses } from "@/common/hooks/queries";
 import { useDataStore } from "@/common/hooks/use-data-store";
 import { Button } from "@/components/ui/button";
+import { proxyImageUrl } from "@/lib/utils";
 
 const CartItemCard = ({
   item,
@@ -23,7 +24,7 @@ const CartItemCard = ({
     <div className="flex gap-4 pb-6 border-b">
       {/* Course Image */}
       <Image
-        src={item.avatar_url}
+        src={proxyImageUrl(item.avatar_url)}
         alt="Course avatar"
         width={128}
         height={96}

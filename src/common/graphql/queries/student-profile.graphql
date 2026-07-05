@@ -3,5 +3,14 @@ query StudentProfile {
         id
         name
         email
+        is_setup_completed
+        organizations {
+            id
+            email
+        }
+        subscribed_categories {
+            id
+            name
+        }
     }
 }

@@ -3,6 +3,7 @@ import { Star } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Course } from "@/common/graphql/generated/graphql";
+import { proxyImageUrl } from "@/lib/utils";
 
 export const CourseCard = ({
   id,
@@ -18,14 +19,21 @@ export const CourseCard = ({
       className="bg-white shadow-md hover:shadow-lg transition-shadow overflow-hidden cursor-pointer"
       onClick={() => router.push(`/courses/${id}`)}
     >
-      {/*<div className="w-full h-48 bg-gradient-to-br from-gray-300 to-gray-400"></div>*/}
-      <Image
-        src={avatar_url}
-        height={"192"}
-        width={"192"}
-        className="w-full h-48"
-        alt="Course avatar url"
-      />
+      {avatar_url ? (
+        <Image
+          src={proxyImageUrl(avatar_url)}
+          height={192}
+          width={192}
+          className="w-full h-48 object-cover"
+          alt={title}
+        />
+      ) : (
+        <div className="w-full h-48 bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
+          <span className="text-white text-4xl font-bold opacity-60">
+            {title?.charAt(0) ?? "C"}
+          </span>
+        </div>
+      )}
       <div className="p-4">
         <div className="flex items-start justify-between mb-2">
           <h3 className="font-bold text-gray-900 text-sm flex-1 line-clamp-2">

@@ -14,6 +14,7 @@ function useStudentProfile(args?: StudentProfileQueryVariables) {
     StudentProfileQueryVariables
   >(StudentProfile, {
     variables: args,
+    fetchPolicy: "no-cache",
   });
 
   return {

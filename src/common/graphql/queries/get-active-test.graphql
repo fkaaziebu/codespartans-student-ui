@@ -1,0 +1,8 @@
+query GetActiveTest {
+    getActiveTest {
+        id
+        mode
+        status
+        course_id
+    }
+}

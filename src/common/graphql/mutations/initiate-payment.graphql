@@ -1,0 +1,6 @@
+mutation InitiatePayment($planId: String!, $children: [String!]!) {
+  initiatePayment(planId: $planId, children: $children) {
+    authorization_url
+    reference
+  }
+}

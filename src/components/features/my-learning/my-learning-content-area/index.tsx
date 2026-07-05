@@ -13,6 +13,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CourseResponse } from "@/common/graphql/generated/graphql";
+import { proxyImageUrl } from "@/lib/utils";
 import { useListOrganizationCourses } from "@/common/hooks/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,28 +24,6 @@ const LearningHeader = () => {
     <div className="bg-gray-900 text-white py-12 mb-8">
       <div className="px-2 sm:px-10 lg:px-20 xl:px-35">
         <h1 className="text-5xl font-bold mb-8">My learning</h1>
-
-        {/* Navigation Tabs */}
-        <div className="flex gap-8 border-b border-gray-700 overflow-x-auto">
-          <button className="pb-4 text-white font-semibold border-b-2 border-white whitespace-nowrap">
-            All courses
-          </button>
-          <button className="pb-4 text-gray-300 hover:text-white font-semibold whitespace-nowrap">
-            My Lists
-          </button>
-          <button className="pb-4 text-gray-300 hover:text-white font-semibold whitespace-nowrap">
-            Wishlist
-          </button>
-          <button className="pb-4 text-gray-300 hover:text-white font-semibold whitespace-nowrap">
-            Certifications
-          </button>
-          <button className="pb-4 text-gray-300 hover:text-white font-semibold whitespace-nowrap">
-            Archived
-          </button>
-          <button className="pb-4 text-gray-300 hover:text-white font-semibold whitespace-nowrap">
-            Learning tools
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -183,7 +162,7 @@ const CourseCard = ({ course }: { course: CourseResponse | null }) => {
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
       {/* Image */}
       <Image
-        src={course?.avatar_url || ""}
+        src={proxyImageUrl(course?.avatar_url)}
         alt="Course avatar url"
         width={192}
         height={192}
@@ -210,7 +189,7 @@ const CourseCard = ({ course }: { course: CourseResponse | null }) => {
         <p className="text-xs text-gray-600 mb-3">{course?.instructor?.name}</p>
 
         {/* Progress Bar */}
-        <div className="mb-3">
+        {/*<div className="mb-3">
           <div className="flex items-center gap-2 mb-1">
             <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
               <div
@@ -221,7 +200,7 @@ const CourseCard = ({ course }: { course: CourseResponse | null }) => {
             <span className="text-xs font-semibold text-gray-900">{90}%</span>
           </div>
           <span className="text-xs text-gray-600">complete</span>
-        </div>
+        </div>*/}
 
         {/* Rating or Action */}
         <div className="border-t pt-3">
@@ -325,15 +304,15 @@ export const MyLearningContentArea = () => {
 
       <div className="px-2 sm:px-10 lg:px-20 xl:px-35 py-8">
         {/* Streak Card */}
-        <StreakCard onDismiss={() => {}} />
+        {/*<StreakCard onDismiss={() => {}} />*/}
 
         {/* Schedule Learning Card */}
-        {showScheduleCard && (
+        {/*{showScheduleCard && (
           <ScheduleLearningCard onDismiss={() => setShowScheduleCard(false)} />
-        )}
+        )}*/}
 
         {/* Filter Bar */}
-        <FilterBar />
+        {/*<FilterBar />*/}
 
         {/* Courses Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -343,7 +322,7 @@ export const MyLearningContentArea = () => {
         </div>
 
         {/* Pagination */}
-        <Pagination currentPage={1} totalPages={8} />
+        {/*<Pagination currentPage={1} totalPages={8} />*/}
       </div>
     </div>
   );

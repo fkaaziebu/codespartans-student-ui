@@ -1,33 +1,46 @@
 query ListOrganizationCourses(
-    $searchTerm: String
-    $pagination: PaginationInput
     $organizationId: String
+    $searchTerm: String
     $filter: CourseFilterInput
+    $pagination: PaginationInput
 ) {
     listOrganizationCourses(
-        searchTerm: $searchTerm
-        pagination: $pagination
         organizationId: $organizationId
+        searchTerm: $searchTerm
         filter: $filter
+        pagination: $pagination
     ) {
         edges {
             node {
                 id
-                title
-                instructor {
-                    id
-                    name
-                    email
-                }
                 avatar_url
                 currency
                 description
                 domains
+                is_subscribed
                 level
                 price
-                is_subscribed
+                title
                 total_questions
                 estimated_duration
+                updated_at
+                inserted_at
+                approved_version {
+                    id
+                    status
+                    inserted_at
+                    updated_at
+                    version_number
+                    test_suites {
+                        id
+                        description
+                        difficulty
+                        keywords
+                        suite_type
+                        image_url
+                        title
+                    }
+                }
             }
         }
     }

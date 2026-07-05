@@ -20,6 +20,14 @@ query GetSubscribedCourseDetails($courseId: String!) {
                 question_number
                 description
                 options
+                hints
+                estimated_time_in_ms
+                difficulty
+                correct_answer
+                solution_steps
+                tags
+                type
+                marks
             }
             test_suites {
                 id
@@ -27,6 +35,21 @@ query GetSubscribedCourseDetails($courseId: String!) {
                 keywords
                 title
                 difficulty
+                suite_type
+                # attempts {
+                #     id
+                #     submitted_answers {
+                #         id
+                #         answer_provided
+                #         question {
+                #             id
+                #             correct_answer
+                #         }
+                #         is_flagged
+                #     }
+                #     status
+                #     mode
+                # }
                 questions {
                     id
                 }

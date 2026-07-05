@@ -1,0 +1,28 @@
+query ListCoursesForOrganization($searchTerm: String, $pagination: PaginationInput) {
+    listCoursesForOrganization(searchTerm: $searchTerm, pagination: $pagination) {
+        count
+        edges {
+            node {
+                id
+                avatar_url
+                estimated_duration
+                domains
+                description
+                currency
+                inserted_at
+                is_subscribed
+                level
+                price
+                title
+                total_questions
+                updated_at
+                instructor {
+                    id
+                    name
+                    email
+                    status
+                }
+            }
+        }
+    }
+}

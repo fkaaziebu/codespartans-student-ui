@@ -1,0 +1,5 @@
+mutation VerifyChildUsername($input: VerifyChildUsernameInput!) {
+  verifyChildUsername(input: $input) {
+    temp_token
+  }
+}

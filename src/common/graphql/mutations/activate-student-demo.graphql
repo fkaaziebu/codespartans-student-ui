@@ -1,0 +1,10 @@
+mutation ActivateStudentDemo($input: ActivateStudentDemoInput!) {
+  activateStudentDemo(input: $input) {
+    id
+    name
+    email
+    is_setup_completed
+    token
+    refresh_token
+  }
+}

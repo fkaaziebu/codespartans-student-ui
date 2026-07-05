@@ -14,6 +14,7 @@ function useLoginStudent(args?: LoginStudentQueryVariables) {
     LoginStudentQueryVariables
   >(LoginStudent, {
     variables: args,
+    fetchPolicy: "no-cache",
   });
 
   return {

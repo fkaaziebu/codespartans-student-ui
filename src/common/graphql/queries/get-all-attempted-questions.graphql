@@ -3,5 +3,10 @@ query GetAllAttemptedQuestions($testId: String!) {
         answer_provided
         question_id
         is_flagged
+        is_correct
+        is_marked
+        question {
+            type
+        }
     }
 }

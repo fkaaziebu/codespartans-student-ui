@@ -1,6 +1,7 @@
 "use client";
 import { Mail, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { proxyImageUrl } from "@/lib/utils";
 
 interface Instructor {
   id: string;
@@ -29,7 +30,7 @@ export default function CourseInstructor({
         <div className="flex-shrink-0">
           {instructor.avatar_url ? (
             <img
-              src={instructor.avatar_url}
+              src={proxyImageUrl(instructor.avatar_url)}
               alt={instructor.name}
               className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
             />

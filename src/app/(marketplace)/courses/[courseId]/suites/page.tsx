@@ -1,7 +1,11 @@
 "use client";
-import { ArrowLeft } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import {
+  SuiteType,
+  TestModeType,
+  TestStatusType,
+} from "@/common/graphql/generated/graphql";
 import { useStartTest } from "@/common/hooks/mutations";
 import { useGetSubscribedCourseDetails } from "@/common/hooks/queries";
 import { CourseTestHeader, SuiteCard } from "@/components/features/course-test";
@@ -9,76 +13,66 @@ import { SuiteHistoryModal } from "@/components/modals";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-// Types based on GraphQL schema
-type Instructor = {
+// ── Types ──────────────────────────────────────────────────────────────────────
+
+type SubmittedAnswer = {
   id: string;
-  email: string;
-  name: string;
+  answer_provided: string;
+  is_flagged: boolean;
+  question?: { id: string; correct_answer: string } | null;
 };
 
-type Question = {
-  id: string;
-};
-
-type TestSuite = {
-  id: string;
-  description: string;
-  keywords: string[];
-  title: string;
-  questions: Question[];
-};
-
-type ApprovedVersion = {
-  id: string;
-  questions: Question[];
-  test_suites: TestSuite[];
-};
-
-type CourseDetails = {
-  id: string;
-  avatar_url?: string;
-  currency?: string;
-  description?: string;
-  domains?: string[];
-  level?: string;
-  price?: number;
-  title: string;
-  instructor?: Instructor;
-  approved_version?: ApprovedVersion;
-};
-
-// Test attempt type (this would come from a separate query/mutation)
 type TestAttempt = {
   id: string;
-  score: number;
+  status: TestStatusType;
+  mode: TestModeType;
+  submitted_answers?: SubmittedAnswer[] | null;
+  score: number; // computed from submitted_answers
   total_questions: number;
-  time_taken: number; // in seconds
-  completed_at: string;
-  status: "completed" | "in_progress" | "abandoned";
 };
 
-// Extended suite type with attempt data
-type SuiteWithAttempts = TestSuite & {
+type SuiteWithAttempts = {
+  id: string;
+  title: string;
+  description: string;
+  keywords: string[];
+  difficulty: string;
+  suite_type: SuiteType | null;
+  questions: { id: string }[];
   question_count: number;
-  estimated_time: number; // in minutes
-  difficulty: "Beginner" | "Intermediate" | "Advanced" | "Expert";
+  estimated_time: number;
   topics: string[];
   attempts: TestAttempt[];
-  best_score?: number;
-  average_score?: number;
-  last_attempt_date?: string;
+  best_score: number;
+  average_score: number;
 };
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+const computeScore = (
+  answers: SubmittedAnswer[] | null | undefined,
+): number => {
+  if (!answers || answers.length === 0) return 0;
+  const correct = answers.filter(
+    (sa) => sa.answer_provided === sa.question?.correct_answer,
+  ).length;
+  return Math.round((correct / answers.length) * 100);
+};
+
+// ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function CourseTestPage() {
   const router = useRouter();
   const { courseId } = useParams<{ courseId: string }>();
+
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [selectedSuite, setSelectedSuite] = useState<SuiteWithAttempts | null>(
     null,
   );
-  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
-  const [course, setCourse] = useState<CourseDetails | null>(null);
   const [suites, setSuites] = useState<SuiteWithAttempts[]>([]);
+  const [activeFilter, setActiveFilter] = useState<SuiteType | "ALL">("ALL");
   const [isLoading, setIsLoading] = useState(true);
+  const [courseTitle, setCourseTitle] = useState("");
 
   const { getSubscribedCourseDetails } = useGetSubscribedCourseDetails();
   const { startTest } = useStartTest();
@@ -87,33 +81,46 @@ export default function CourseTestPage() {
     try {
       setIsLoading(true);
       const response = await getSubscribedCourseDetails({
-        variables: {
-          courseId,
-        },
+        variables: { courseId },
+        fetchPolicy: "no-cache",
       });
 
       const courseData = response.data?.getSubscribedCourseDetails;
-      if (courseData) {
-        // @ts-expect-error error
-        setCourse(courseData);
+      if (!courseData) return;
 
-        // Transform test suites to include additional data
-        if (courseData.approved_version?.test_suites) {
-          const transformedSuites: SuiteWithAttempts[] =
-            courseData.approved_version.test_suites.map((suite) => ({
-              ...suite,
-              question_count: suite.questions?.length || 0,
-              estimated_time: calculateEstimatedTime(
-                suite.questions?.length || 0,
-              ),
-              difficulty: determineDifficulty(suite.keywords),
-              topics: suite.keywords || [],
-              attempts: [], // This would be fetched from a separate query
-            }));
+      setCourseTitle(courseData.title);
 
-          setSuites(transformedSuites);
-        }
-      }
+      const rawSuites = courseData.approved_version?.test_suites ?? [];
+      const transformed: SuiteWithAttempts[] = rawSuites.map((suite) => {
+        const questionCount = suite.questions?.length ?? 0;
+
+        const attempts: TestAttempt[] = [];
+
+        const scores = attempts.map((a) => a.score);
+        const bestScore = scores.length > 0 ? Math.max(...scores) : 0;
+        const averageScore =
+          scores.length > 0
+            ? Math.round(scores.reduce((s, v) => s + v, 0) / scores.length)
+            : 0;
+
+        return {
+          id: suite.id,
+          title: suite.title ?? "",
+          description: suite.description ?? "",
+          keywords: suite.keywords ?? [],
+          difficulty: suite.difficulty,
+          suite_type: suite.suite_type ?? null,
+          questions: (suite.questions ?? []).map((q) => ({ id: q.id })),
+          question_count: questionCount,
+          estimated_time: questionCount * 2,
+          topics: suite.keywords ?? [],
+          attempts,
+          best_score: bestScore,
+          average_score: averageScore,
+        };
+      });
+
+      setSuites(transformed);
     } catch (error) {
       console.error("Error fetching course details:", error);
     } finally {
@@ -130,56 +137,14 @@ export default function CourseTestPage() {
     fetchCourseDetails();
   }, [courseId]);
 
-  // Helper function to calculate estimated time (2 minutes per question average)
-  const calculateEstimatedTime = (questionCount: number): number => {
-    return questionCount * 2; // 2 minutes per question
-  };
-
-  // Helper function to determine difficulty based on keywords
-  const determineDifficulty = (
-    keywords: string[],
-  ): "Beginner" | "Intermediate" | "Advanced" | "Expert" => {
-    const lowerKeywords = keywords.map((k) => k.toLowerCase());
-
-    if (
-      lowerKeywords.some((k) =>
-        [
-          "advanced",
-          "expert",
-          "complex",
-          "optimization",
-          "architecture",
-        ].includes(k),
-      )
-    ) {
-      return "Expert";
-    }
-    if (
-      lowerKeywords.some((k) =>
-        ["intermediate", "patterns", "performance"].includes(k),
-      )
-    ) {
-      return "Advanced";
-    }
-    if (lowerKeywords.some((k) => ["hooks", "state", "context"].includes(k))) {
-      return "Intermediate";
-    }
-    return "Beginner";
-  };
-
-  const handleStartTest = async (suiteId: string) => {
+  const handleStartTest = async (suiteId: string, mode: TestModeType) => {
     try {
       const response = await startTest({
-        variables: {
-          suiteId: suiteId,
-        },
+        variables: { suiteId, mode },
       });
 
-      if (response.errors?.length) {
-        throw new Error("Error starting test");
-      }
+      if (response.errors?.length) throw new Error("Error starting test");
 
-      // Navigate to test taking page
       router.push(`/courses/${courseId}/tests/${response.data?.startTest.id}`);
     } catch (error) {
       console.log(error);
@@ -191,43 +156,57 @@ export default function CourseTestPage() {
     setIsHistoryModalOpen(true);
   };
 
-  const handleResumeTest = (suiteId: string, attemptId: string) => {
-    // Navigate to resume test
-    router.push(
-      `/courses/${courseId}/test/${suiteId}/take?attempt=${attemptId}`,
-    );
+  const handleResumeTest = (_suiteId: string, attemptId: string) => {
+    router.push(`/courses/${courseId}/tests/${attemptId}`);
   };
 
-  // Calculate overall progress
-  const completedSuites = suites.filter(
-    (suite) => suite.attempts && suite.attempts.length > 0,
-  ).length;
-  const totalAttempts = suites.reduce(
-    (sum, suite) => sum + (suite.attempts?.length || 0),
-    0,
-  );
-  const overallAverageScore =
-    suites
-      .filter((s) => s.average_score)
-      .reduce((sum, s) => sum + (s.average_score || 0), 0) /
-      suites.filter((s) => s.average_score).length || 0;
+  // Filtered suites
+  const filteredSuites =
+    activeFilter === "ALL"
+      ? suites
+      : suites.filter((s) => s.suite_type === activeFilter);
 
-  const totalQuestions =
-    course?.approved_version?.questions?.length ||
-    suites.reduce((sum, suite) => sum + suite.question_count, 0);
+  // Derive which filter tabs are meaningful (only show types that exist)
+  const availableTypes = Array.from(
+    new Set(suites.map((s) => s.suite_type).filter(Boolean)),
+  ) as SuiteType[];
+
+  const filterLabels: Record<SuiteType | "ALL", string> = {
+    ALL: "All",
+    [SuiteType.Year]:          "By Year",
+    [SuiteType.YearOne]:       "Year 1",
+    [SuiteType.YearTwo]:       "Year 2",
+    [SuiteType.YearThree]:     "Year 3",
+    [SuiteType.Mixed]:         "Mixed",
+    [SuiteType.PastQuestions]: "Past Questions",
+    [SuiteType.Class]:         "By Class",
+    [SuiteType.Topic]:         "By Topic",
+  };
+
+  // Derived stats
+  const completedSuites = suites.filter((s) => s.attempts.length > 0).length;
+  const totalAttempts = suites.reduce((sum, s) => sum + s.attempts.length, 0);
+  const scoredSuites = suites.filter((s) => s.average_score > 0);
+  const overallAverageScore =
+    scoredSuites.length > 0
+      ? Math.round(
+          scoredSuites.reduce((sum, s) => sum + s.average_score, 0) /
+            scoredSuites.length,
+        )
+      : 0;
 
   if (isLoading) {
     return (
       <div className="flex min-h-screen bg-gray-50 items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-gray-300 border-t-gray-800 rounded-full animate-spin"></div>
+          <div className="w-12 h-12 border-4 border-gray-300 border-t-gray-800 rounded-full animate-spin" />
           <p className="text-sm text-gray-600">Loading course details...</p>
         </div>
       </div>
     );
   }
 
-  if (!course) {
+  if (!courseTitle) {
     return (
       <div className="flex min-h-screen bg-gray-50 items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -243,41 +222,36 @@ export default function CourseTestPage() {
 
   if (suites.length === 0) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <div className="flex-1 flex flex-col">
-          {/* Empty State */}
-          <div className="flex-1 flex items-center justify-center px-8 py-6">
-            <div className="flex flex-col items-center gap-4 max-w-md text-center">
-              <div className="bg-blue-100 rounded-full p-6">
-                <svg
-                  className="w-12 h-12 text-blue-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-950">
-                No test suites available
-              </h3>
-              <p className="text-sm text-gray-600">
-                This course doesn't have any test suites yet. Check back later
-                or contact your instructor.
-              </p>
-              <Button
-                onClick={() => router.push(`/student/courses/${courseId}`)}
-                variant="outline"
-              >
-                Back to Course
-              </Button>
-            </div>
+      <div className="flex min-h-screen bg-gray-50 items-center justify-center px-8">
+        <div className="flex flex-col items-center gap-4 max-w-md text-center">
+          <div className="bg-blue-100 rounded-full p-6">
+            <svg
+              className="w-12 h-12 text-blue-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+              />
+            </svg>
           </div>
+          <h3 className="text-xl font-bold text-gray-950">
+            No test suites available
+          </h3>
+          <p className="text-sm text-gray-600">
+            This course doesn&apos;t have any test suites yet. Check back later
+            or contact your instructor.
+          </p>
+          <Button
+            onClick={() => router.push(`/courses/${courseId}`)}
+            variant="outline"
+          >
+            Back to Course
+          </Button>
         </div>
       </div>
     );
@@ -286,8 +260,8 @@ export default function CourseTestPage() {
   return (
     <div className="flex min-h-screen pt-24">
       <div className="flex-1 flex flex-col px-2 sm:px-10 lg:px-20 xl:px-35 py-8">
-        {/* Course Overview Stats */}
-        <div className=" bg-white border-b">
+        {/* Stats header */}
+        <div className="bg-white border-b">
           <CourseTestHeader
             totalSuites={suites.length}
             completedSuites={completedSuites}
@@ -296,40 +270,76 @@ export default function CourseTestPage() {
           />
         </div>
 
-        {/* Main Content - Test Suites */}
-        <div>
-          <div className="flex flex-col pt-8">
-            {/* Section Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex flex-col">
-                <h2 className="text-xl font-bold text-gray-950">Test Suites</h2>
-                <p className="text-sm text-gray-600">
-                  Select a suite to start a new test or view your test history
-                </p>
-              </div>
-              <Badge variant="outline" className="text-sm">
-                {completedSuites} of {suites.length} Completed
-              </Badge>
+        {/* Suite list */}
+        <div className="flex flex-col pt-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col">
+              <h2 className="text-xl font-bold text-gray-950">Test Suites</h2>
+              <p className="text-sm text-gray-600">
+                Select a suite to start a new test or view your test history
+              </p>
             </div>
+            <Badge variant="outline" className="text-sm">
+              {completedSuites} of {suites.length} Completed
+            </Badge>
+          </div>
 
-            {/* Suites Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {suites.map((suite) => (
+          {/* Filter tabs */}
+          {availableTypes.length > 0 && (
+            <div className="flex items-center gap-2 mb-6 flex-wrap">
+              {(["ALL", ...availableTypes] as (SuiteType | "ALL")[]).map(
+                (filter) => (
+                  <button
+                    key={filter}
+                    onClick={() => setActiveFilter(filter)}
+                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors border ${
+                      activeFilter === filter
+                        ? "bg-gray-900 text-white border-gray-900"
+                        : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                    }`}
+                  >
+                    {filterLabels[filter]}
+                    <span className="ml-1.5 text-xs opacity-70">
+                      {filter === "ALL"
+                        ? suites.length
+                        : suites.filter((s) => s.suite_type === filter).length}
+                    </span>
+                  </button>
+                ),
+              )}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {filteredSuites.length === 0 ? (
+              <div className="col-span-2 flex flex-col items-center gap-2 py-12 text-center">
+                <p className="text-gray-500 font-medium">
+                  No suites match this filter
+                </p>
+                <button
+                  onClick={() => setActiveFilter("ALL")}
+                  className="text-sm text-gray-700 underline"
+                >
+                  Show all suites
+                </button>
+              </div>
+            ) : (
+              filteredSuites.map((suite) => (
                 <SuiteCard
                   key={suite.id}
-                  // @ts-expect-error error
+                  // @ts-expect-error extended type
                   suite={suite}
                   onStartTest={handleStartTest}
-                  // @ts-expect-error error
+                  // @ts-expect-error extended type
                   onViewHistory={handleViewHistory}
                 />
-              ))}
-            </div>
+              ))
+            )}
           </div>
         </div>
       </div>
 
-      {/* History Modal */}
+      {/* History modal */}
       {selectedSuite && (
         <SuiteHistoryModal
           open={isHistoryModalOpen}

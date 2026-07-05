@@ -1,0 +1,34 @@
+query ListAttempts(
+    $searchTerm: String
+    $filter: AttemptFilterInput
+    $pagination: PaginationInput
+) {
+    listAttempts(
+        searchTerm: $searchTerm
+        filter: $filter
+        pagination: $pagination
+    ) {
+        count
+        pageInfo {
+            endCursor
+            hasNextPage
+            hasPreviousPage
+            startCursor
+        }
+        edges {
+            node {
+                id
+                course_id
+                date_taken
+                course_title
+                correct
+                mode
+                score
+                status
+                time_taken
+                trend
+                wrong
+            }
+        }
+    }
+}

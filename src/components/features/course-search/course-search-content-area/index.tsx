@@ -25,11 +25,9 @@ const CourseSearchContentAreaInner = () => {
   const query = searchParams.get("q") || "";
 
   const { searchClient } = instantMeiliSearch(
-    process.env.MEILI_URL || "http://localhost:7700",
-    process.env.MEILI_MASTER_KEY || "password",
-    {
-      finitePagination: true,
-    },
+    `${typeof window !== "undefined" ? window.location.origin : ""}/api/meili`,
+    "",
+    { finitePagination: true },
   );
 
   return (

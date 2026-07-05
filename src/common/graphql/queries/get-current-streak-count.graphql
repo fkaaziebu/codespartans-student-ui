@@ -1,0 +1,6 @@
+query GetCurrentStreakCount {
+  getCurrentStreakCount {
+    current_streak
+    best_streak
+  }
+}

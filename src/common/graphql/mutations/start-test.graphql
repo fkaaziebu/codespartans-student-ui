@@ -1,5 +1,5 @@
-mutation StartTest($suiteId: String!) {
-    startTest(suiteId: $suiteId) {
+mutation StartTest($suiteId: String!, $mode: TestModeType) {
+    startTest(suiteId: $suiteId, mode: $mode) {
         id
         status
     }

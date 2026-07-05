@@ -1,0 +1,30 @@
+query ListCourseSuites(
+    $courseId: String!
+    $suiteTypes: [SuiteType!]
+    $pagination: PaginationInput
+) {
+    listCourseSuites(
+        courseId: $courseId
+        suiteTypes: $suiteTypes
+        pagination: $pagination
+    ) {
+        edges {
+            node {
+                id
+                title
+                description
+                keywords
+                difficulty
+                suite_type
+                image_url
+            }
+        }
+        pageInfo {
+            hasNextPage
+            hasPreviousPage
+            startCursor
+            endCursor
+        }
+        count
+    }
+}

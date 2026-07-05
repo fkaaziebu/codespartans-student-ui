@@ -1,7 +1,11 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Question } from "@/common/graphql/generated/graphql";
+import {
+  Question,
+  QuestionType,
+  TestModeType,
+} from "@/common/graphql/generated/graphql";
 import { formatTimeRange } from "@/common/helpers";
 import {
   useEndTest,
@@ -20,7 +24,13 @@ import { QuestionDisplay } from "./question-display";
 import { QuestionList } from "./question-list";
 import { TestControls } from "./test-controls";
 
-// Main Test Taking Component
+type AnswerResult = {
+  isCorrect: boolean;
+  correctAnswer: string;
+  solutionSteps: string[];
+  isPending?: boolean;
+};
+
 export const TestTakingContentArea = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,9 +43,13 @@ export const TestTakingContentArea = () => {
   const [flaggedQuestions, setFlaggedQuestions] = useState<Set<string>>(
     new Set(),
   );
-  const [timeRemaining, setTimeRemaining] = useState(5400); // 90 minutes
   const [isPaused, setIsPaused] = useState(false);
   const [testEnded, setTestEnded] = useState(false);
+
+  // Mode-aware state
+  const [testMode, setTestMode] = useState<TestModeType | null>(null);
+  const [answerResult, setAnswerResult] = useState<AnswerResult | null>(null);
+
   const { data, studentProfile } = useStudentProfile();
   const { data: course, getSubscribedCourseDetails } =
     useGetSubscribedCourseDetails();
@@ -51,23 +65,25 @@ export const TestTakingContentArea = () => {
   }>();
   const router = useRouter();
 
-  // Timer effect
-  useEffect(() => {
-    if (!isPaused && timeRemaining > 0 && !testEnded) {
-      const timer = setTimeout(() => setTimeRemaining(timeRemaining - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [timeRemaining, isPaused, testEnded]);
+  const isLearningMode = testMode === TestModeType.UnProctured;
+  const totalQuestions = course?.approved_version?.questions?.length || 0;
 
-  // Auto end test when time runs out
+  // Detect test mode by matching testId against attempts in fetched course data
   useEffect(() => {
-    if (timeRemaining === 0 && !testEnded) {
-      setTestEnded(true);
-      setIsPaused(true);
+    if (course?.approved_version?.test_suites && testId) {
+      for (const suite of course.approved_version.test_suites) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const attempt = (suite as any).attempts?.find((a: any) => a.id === testId);
+        if (attempt) {
+          setTestMode(attempt.mode);
+          break;
+        }
+      }
     }
-  }, [timeRemaining, testEnded]);
+  }, [course, testId]);
 
   const handleAnswerSelect = (answer: string) => {
+    if (answerResult) return; // lock options once feedback is shown
     setSelectedAnswer(answer);
   };
 
@@ -75,6 +91,7 @@ export const TestTakingContentArea = () => {
     try {
       setIsSubmitting(true);
       setError(null);
+
       if (!selectedAnswer && !isFlagged) {
         setError("Please select an answer before submitting.");
         return;
@@ -110,26 +127,48 @@ export const TestTakingContentArea = () => {
         throw new Error(response.errors[0]);
       }
 
-      // Move to next question if available
-      handleNext();
-    } catch (err: any) {
+      const isShortAnswer =
+        currentQuestion?.type === QuestionType.ShortAnswer ||
+        currentQuestion?.type === QuestionType.FillIn;
+
+      if (isLearningMode && !isFlagged && selectedAnswer) {
+        if (isShortAnswer) {
+          // Non-deterministic: show pending state, AI will mark asynchronously
+          setAnswerResult({
+            isCorrect: false,
+            correctAnswer: "",
+            solutionSteps: [],
+            isPending: true,
+          });
+        } else {
+          // Deterministic: show immediate feedback
+          setAnswerResult({
+            isCorrect: selectedAnswer === currentQuestion?.correct_answer,
+            correctAnswer: currentQuestion?.correct_answer || "",
+            solutionSteps: currentQuestion?.solution_steps || [],
+          });
+        }
+      } else {
+        // Proctored mode (or flagged): auto-advance
+        handleNext();
+      }
+    } catch (err: unknown) {
       console.error("Error submitting answer:", err);
-      setError(`${err.message}`.toString());
+      setError(`${(err as Error).message}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleNext = () => {
+    setAnswerResult(null);
     if (
       (currentQuestion?.question_number || 0) <
       (course?.approved_version?.questions?.length || 0)
     ) {
       setCurrentQuestion(
-        // @ts-expect-error error
         course?.approved_version?.questions?.find(
-          // @ts-expect-error error
-          (qs) => qs.question_number === currentQuestion?.question_number + 1,
+          (qs) => qs.question_number === (currentQuestion?.question_number ?? 0) + 1,
         ),
       );
       setSelectedAnswer(null);
@@ -137,12 +176,11 @@ export const TestTakingContentArea = () => {
   };
 
   const handlePrevious = () => {
+    setAnswerResult(null);
     if ((currentQuestion?.question_number || 0) > 1) {
       setCurrentQuestion(
-        // @ts-expect-error error
-        course?.approved_version?.questions.find(
-          // @ts-expect-error error
-          (qs) => qs.question_number === currentQuestion?.question_number - 1,
+        course?.approved_version?.questions?.find(
+          (qs) => qs.question_number === (currentQuestion?.question_number ?? 0) - 1,
         ),
       );
       setSelectedAnswer(null);
@@ -151,37 +189,22 @@ export const TestTakingContentArea = () => {
 
   const handlePauseTest = async () => {
     if (!testId) return;
-
     try {
-      const response = await pauseTest({
-        variables: {
-          testId,
-        },
-      });
-
-      if (response.data?.pauseTest) {
-        setIsPaused(true);
-      }
+      const response = await pauseTest({ variables: { testId } });
+      if (response.data?.pauseTest) setIsPaused(true);
     } catch (err) {
       console.error("Error pausing test:", err);
       setError("Failed to pause test.");
     }
   };
 
-  // Resume test
   const handleResumeTest = async () => {
     if (!testId) return;
-
     try {
-      const response = await resumeTest({
-        variables: {
-          testId,
-        },
-      });
-
+      const response = await resumeTest({ variables: { testId } });
       if (response.data?.resumeTest) {
         setIsPaused(false);
-        setStartTime(Date.now()); // Reset start time for current question
+        setStartTime(Date.now());
       }
     } catch (err) {
       console.error("Error resuming test:", err);
@@ -189,17 +212,10 @@ export const TestTakingContentArea = () => {
     }
   };
 
-  // End test
   const handleEndTest = async () => {
     if (!testId) return;
-
     try {
-      await endTest({
-        variables: {
-          testId,
-        },
-      });
-
+      await endTest({ variables: { testId } });
       router.push(`/courses/${courseId}/tests/${testId}/results`);
     } catch (err) {
       console.error("Error ending test:", err);
@@ -207,42 +223,17 @@ export const TestTakingContentArea = () => {
     }
   };
 
-  if (testEnded) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-8 max-w-md mx-4 shadow-lg text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Test Submitted
-          </h2>
-          <p className="text-gray-600 mb-6">
-            You have answered {answeredQuestions.size} out of 30 questions.
-          </p>
-          <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg">
-            View Results
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   useEffect(() => {
     studentProfile();
-    getSubscribedCourseDetails({
-      variables: {
-        courseId,
-      },
-    });
+    getSubscribedCourseDetails({ variables: { courseId } });
     getAllAttemptedQuestions({
-      variables: {
-        testId,
-      },
+      variables: { testId },
       fetchPolicy: "no-cache",
     });
   }, []);
 
   useEffect(() => {
     if (course?.approved_version?.questions) {
-      // @ts-expect-error error
       setCurrentQuestion(course?.approved_version?.questions[0]);
     }
   }, [course]);
@@ -251,9 +242,7 @@ export const TestTakingContentArea = () => {
     if (currentQuestion) {
       setStartTime(Date.now());
       getAllAttemptedQuestions({
-        variables: {
-          testId,
-        },
+        variables: { testId },
         fetchPolicy: "no-cache",
       });
     }
@@ -278,12 +267,34 @@ export const TestTakingContentArea = () => {
             ?.map((q) => q.question_id) || []),
         ]),
     );
-
     setSelectedAnswer(
       attemptedQuestions?.find((aq) => aq.question_id === currentQuestion?.id)
         ?.answer_provided || "",
     );
   }, [attemptedQuestions]);
+
+  if (testEnded) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-8 max-w-md mx-4 shadow-lg text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Test Submitted
+          </h2>
+          <p className="text-gray-600 mb-6">
+            You answered {answeredQuestions.size} of {totalQuestions} questions.
+          </p>
+          <Button
+            className="w-full"
+            onClick={() =>
+              router.push(`/courses/${courseId}/tests/${testId}/results`)
+            }
+          >
+            View Results
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pt-40 pb-12">
@@ -291,36 +302,36 @@ export const TestTakingContentArea = () => {
         testName={course?.title || ""}
         studentId={data?.id || ""}
         testId={testId}
-        handlePauseTest={(isPaused: boolean) => setIsPaused(isPaused)}
+        mode={testMode}
+        handlePauseTest={(paused: boolean) => setIsPaused(paused)}
       />
 
       <div className="px-2 sm:px-6 lg:px-8 xl:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Left Side - Question List */}
+          {/* Question navigator */}
           <div className="lg:col-span-1">
             <QuestionList
-              // @ts-expect-error err
               questions={course?.approved_version?.questions}
-              // @ts-expect-error error
               currentQuestion={currentQuestion}
               answeredQuestions={answeredQuestions}
               flaggedQuestions={flaggedQuestions}
               onSelectQuestion={(question) => {
+                setAnswerResult(null);
                 setCurrentQuestion(question);
                 setSelectedAnswer(null);
               }}
             />
           </div>
 
-          {/* Middle Side - Question Display */}
+          {/* Question display */}
           <div className="lg:col-span-2">
             {currentQuestion && (
               <QuestionDisplay
                 question={currentQuestion}
-                totalQuestions={
-                  course?.approved_version?.questions?.length || 0
-                }
+                totalQuestions={totalQuestions}
                 error={error}
+                mode={testMode}
+                answerResult={answerResult}
                 // @ts-expect-error error
                 selectedAnswer={
                   selectedAnswer ||
@@ -342,10 +353,13 @@ export const TestTakingContentArea = () => {
             )}
           </div>
 
-          {/* Right Side - Test Controls */}
+          {/* Test controls */}
           <div className="lg:col-span-1">
             <TestControls
+              mode={testMode}
               isPaused={isPaused}
+              totalQuestions={totalQuestions}
+              answeredCount={answeredQuestions.size}
               onPause={handlePauseTest}
               onResume={handleResumeTest}
               onEnd={handleEndTest}

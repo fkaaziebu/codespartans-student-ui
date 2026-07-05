@@ -1,0 +1,60 @@
+query GetTest($testId: String!) {
+    getTest(testId: $testId) {
+        course_id
+        course_category
+        id
+        mode
+        status
+        submitted_answers {
+            id
+            answer_provided
+            hints_used
+            is_flagged
+            question_id
+            is_correct
+            is_marked
+            question {
+                id
+                marks
+                question_number
+                description
+                hints
+                solution_steps
+                options
+                type
+                tags
+                class_level
+                exam_year
+                correct_answer
+                difficulty
+                estimated_time_in_ms
+            }
+        }
+        test_suite {
+            questions {
+                id
+                marks
+                question_number
+                description
+                hints
+                solution_steps
+                options
+                type
+                tags
+                class_level
+                exam_year
+                correct_answer
+                difficulty
+                estimated_time_in_ms
+            }
+            title
+            id
+            difficulty
+            description
+        }
+        time_events {
+            type
+            recorded_at
+        }
+    }
+}

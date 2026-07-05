@@ -4,8 +4,13 @@ query LoginStudent($email: String!, $password: String!) {
         email
         name
         token
+        refresh_token
+        account_status
+        deletion_scheduled_for
+        is_setup_completed
         organizations {
             id
+            email
         }
     }
 }

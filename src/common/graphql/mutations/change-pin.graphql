@@ -1,0 +1,5 @@
+mutation ChangePin($currentPin: String!, $newPin: String!) {
+  changePin(currentPin: $currentPin, newPin: $newPin) {
+    message
+  }
+}

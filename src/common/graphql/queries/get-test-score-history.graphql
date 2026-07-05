@@ -1,0 +1,8 @@
+query GetTestScoreHistory($testId: String) {
+    getTestScoreHistory(testId: $testId) {
+        test_id
+        course_title
+        score
+        date_taken
+    }
+}

@@ -21,8 +21,8 @@ const MeilisearchInputWithSearchParams = () => {
   const queryParam = searchParams.get("q") || "";
 
   const { searchClient } = instantMeiliSearch(
-    process.env.MEILI_URL || "http://localhost:7700",
-    process.env.MEILI_MASTER_KEY || "password",
+    `${typeof window !== "undefined" ? window.location.origin : ""}/api/meili`,
+    "",
   );
 
   return (

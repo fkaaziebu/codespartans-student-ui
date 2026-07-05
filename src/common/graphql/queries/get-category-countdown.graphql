@@ -1,0 +1,7 @@
+query GetCategoryCountdown($categoryId: String!) {
+  getCategoryCountdown(categoryId: $categoryId) {
+    categoryName
+    countdown
+    exam_duration_days
+  }
+}

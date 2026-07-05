@@ -1,0 +1,14 @@
+mutation CancelStudentAccountDeletion {
+    cancelStudentAccountDeletion {
+        token
+        refresh_token
+        account_status
+        name
+        email
+        is_setup_completed
+        organizations {
+            id
+            email
+        }
+    }
+}

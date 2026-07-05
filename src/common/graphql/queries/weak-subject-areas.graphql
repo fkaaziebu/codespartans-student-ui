@@ -1,0 +1,21 @@
+query WeakSubjectAreas($testId: String) {
+    weakSubjectAreas(testId: $testId) {
+        subject
+        error_count
+        total
+        accuracy
+        questions {
+            id
+            question_number
+            description
+            hints
+            solution_steps
+            options
+            type
+            tags
+            correct_answer
+            difficulty
+            estimated_time_in_ms
+        }
+    }
+}

@@ -2,8 +2,9 @@
 import { ArrowRight, Star } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MeiliSearch } from "meilisearch";
+import { proxyImageUrl } from "@/lib/utils";
 
 type MeilisearchCourse = {
   id: string;
@@ -18,11 +19,6 @@ type MeilisearchCourse = {
   };
 };
 
-const meiliClient = new MeiliSearch({
-  host: process.env.MEILI_URL || "http://localhost:7700",
-  apiKey: process.env.MEILI_MASTER_KEY || "password",
-});
-
 const MEILI_INDEX = process.env.MEILI_INDEX || "";
 
 const SectionCourseCard = ({ course }: { course: MeilisearchCourse }) => {
@@ -35,7 +31,7 @@ const SectionCourseCard = ({ course }: { course: MeilisearchCourse }) => {
     >
       {course.avatar_url && (
         <Image
-          src={course.avatar_url}
+          src={proxyImageUrl(course.avatar_url)}
           height={192}
           width={192}
           className="w-full h-48 object-cover"
@@ -95,11 +91,16 @@ export const MeilisearchCourseSection = ({
   const [courses, setCourses] = useState<MeilisearchCourse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const meiliClient = useRef(
+    new MeiliSearch({
+      host: `${typeof window !== "undefined" ? window.location.origin : ""}/api/meili`,
+    }),
+  );
 
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const index = meiliClient.index(MEILI_INDEX);
+        const index = meiliClient.current.index(MEILI_INDEX);
         const results = await index.search<MeilisearchCourse>(query || "", {
           limit,
           ...(sort && sort.length > 0 ? { sort } : {}),

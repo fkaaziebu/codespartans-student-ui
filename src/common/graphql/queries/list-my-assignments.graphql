@@ -1,0 +1,25 @@
+query ListMyAssignments {
+    listMyAssignments {
+        id
+        status
+        assigned_at
+        completed_at
+        note
+        parent {
+            first_name
+            last_name
+            gender
+        }
+        test_suite {
+            id
+            title
+            description
+            difficulty
+        }
+        test {
+            id
+            status
+            course_id
+        }
+    }
+}

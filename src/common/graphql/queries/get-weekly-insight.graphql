@@ -1,0 +1,11 @@
+query GetWeeklyInsight {
+  getWeeklyInsight {
+    title
+    description
+    suites {
+      suite_id
+      title
+      accuracy
+    }
+  }
+}

@@ -54,7 +54,7 @@ export default function LoginPage() {
 
   const handleGoogleLogin = () => {
     setIsGoogleLoading(true);
-    window.location.href = `${process.env.REST_BASE_URL}/v1/students/auth/google/login`;
+    window.location.href = "/api/auth/google/login";
   };
 
   const {
@@ -87,6 +87,7 @@ export default function LoginPage() {
       }
 
       sessionStorage.setItem("token", `${response.data?.loginStudent.token}`);
+      sessionStorage.setItem("refreshToken", `${response.data?.loginStudent.refresh_token}`);
       sessionStorage.setItem(
         "organizationId",
         `${response.data?.loginStudent.organizations?.[0]?.id}`,
