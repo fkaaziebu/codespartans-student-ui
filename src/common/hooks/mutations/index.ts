@@ -15,7 +15,6 @@ export { default as useChangeStudentPassword } from "./use-change-student-passwo
 export { default as useRefreshStudentToken } from "./use-refresh-student-token";
 export { default as useCompleteStudentAccountValidation } from "./use-complete-student-account-validation";
 export { default as useResendAccountValidationCode } from "./use-resend-account-validation-code";
-export { default as useVerifyChildUsername } from "./use-verify-child-username";
 export { default as useLoginChild } from "./use-login-child";
 export { default as useStartAssignedTest } from "./use-start-assigned-test";
 export { default as useInitiatePayment } from "./use-initiate-payment";

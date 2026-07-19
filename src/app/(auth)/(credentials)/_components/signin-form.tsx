@@ -12,8 +12,12 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { AccountStatus } from "@/graphql/generated/graphql";
+import { formatCountdown } from "@/common/helpers";
 
 const CODE_LENGTH = 6;
+const LOCK_DURATION_MS = 300_000; // 5 minutes — matches server lockout
+const LOCKOUT_MSG =
+  "Too many failed attempts. Your account is locked for 5 minutes. Please try again later or contact support.";
 
 const loginSchema = z.object({
   email: z.string().min(1, "Email is required").email("Invalid email address"),
@@ -41,6 +45,8 @@ export default function SigninForm() {
   const [otpError, setOtpError] = useState<string | null>(null);
   const [otpLoading, setOtpLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+  const [lockSecsLeft, setLockSecsLeft] = useState(0);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const router = useRouter();
@@ -63,6 +69,34 @@ export default function SigninForm() {
     const token = sessionStorage.getItem("token");
     if (token) router.push("/courses");
   }, []);
+
+  // Restore an in-progress lockout on mount (survives page refresh)
+  useEffect(() => {
+    const storedLock = sessionStorage.getItem("studentLoginLockUntil");
+    if (storedLock && Number(storedLock) > Date.now()) {
+      setLockedUntil(Number(storedLock));
+    }
+  }, []);
+
+  // Lock countdown
+  useEffect(() => {
+    if (!lockedUntil) return;
+    const tick = () => {
+      const secs = Math.ceil((lockedUntil - Date.now()) / 1000);
+      if (secs <= 0) {
+        setLockedUntil(null);
+        setLockSecsLeft(0);
+        setErrorMessage(null);
+        sessionStorage.removeItem("studentLoginLockUntil");
+        sessionStorage.removeItem("studentLoginLockEmail");
+      } else {
+        setLockSecsLeft(secs);
+      }
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [lockedUntil]);
 
   useEffect(() => {
     const pendingToken = searchParams.get("pendingToken");
@@ -152,6 +186,14 @@ export default function SigninForm() {
         error instanceof Error
           ? error.message
           : "An unexpected error occurred. Please try again.";
+
+      if (message === LOCKOUT_MSG) {
+        const lockUntil = Date.now() + LOCK_DURATION_MS;
+        setLockedUntil(lockUntil);
+        sessionStorage.setItem("studentLoginLockUntil", String(lockUntil));
+        sessionStorage.setItem("studentLoginLockEmail", data.email);
+        return;
+      }
 
       const isUnvalidated =
         /not.validated|not.verified|unverified|account.validation|validate.your.account|verification.required/i.test(
@@ -465,6 +507,49 @@ export default function SigninForm() {
             >
               Log out / Dismiss
             </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (lockedUntil) {
+    return (
+      <div className="signup-right">
+        <div className="signup-form-card">
+          <div style={{ textAlign: "center", marginBottom: 20 }}>
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 12,
+                background: "#fef2f2",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 22,
+                marginBottom: 12,
+              }}
+            >
+              🔒
+            </div>
+            <div className="su-form-title">Too many failed attempts</div>
+            <div className="su-form-sub">
+              Your account is locked for 5 minutes. Please try again later or
+              contact support.
+            </div>
+          </div>
+          <div
+            style={{
+              textAlign: "center",
+              fontSize: 32,
+              fontWeight: 700,
+              fontVariantNumeric: "tabular-nums",
+              color: "var(--t1)",
+              margin: "12px 0 4px",
+            }}
+          >
+            {formatCountdown(lockSecsLeft * 1000).display}
           </div>
         </div>
       </div>

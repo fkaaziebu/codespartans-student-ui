@@ -166,7 +166,7 @@ function DemoRegisterInner() {
               >
                 I agree to CodeSpartans&apos;{" "}
                 <a
-                  href={`${process.env.LANDING_URL}/terms`}
+                  href={`${process.env.NEXT_PUBLIC_LANDING_URL}/terms`}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
@@ -175,7 +175,7 @@ function DemoRegisterInner() {
                 </a>{" "}
                 and{" "}
                 <a
-                  href={`${process.env.LANDING_URL}/terms`}
+                  href={`${process.env.NEXT_PUBLIC_LANDING_URL}/terms`}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}

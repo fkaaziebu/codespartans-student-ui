@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  useGetActiveTest,
   useListOrganizationCourses,
   useStudentProfile,
 } from "@/common/hooks/queries";
@@ -10,6 +11,7 @@ import { useStartTest } from "@/common/hooks/mutations";
 import { TestModeType } from "@/common/graphql/generated/graphql";
 import { useSidebar } from "@/common/context/sidebar-context";
 import CourseAccordionItem from "@/components/features/exams/course-accordion-item";
+import { OngoingTestModal } from "@/components/modals";
 
 export default function ExamsIndexPage() {
   const router = useRouter();
@@ -18,9 +20,11 @@ export default function ExamsIndexPage() {
     null,
   );
   const [searchTerm, setSearchTerm] = useState("");
+  const [showOngoingTestModal, setShowOngoingTestModal] = useState(false);
 
   const { studentProfile } = useStudentProfile();
   const { startTest, loading: startingTest } = useStartTest();
+  const { getActiveTest, data: activeTest } = useGetActiveTest();
   const { listOrganizationCourses, data, loading } = useListOrganizationCourses(
     {
       filter: { is_subscribed: true },
@@ -65,9 +69,21 @@ export default function ExamsIndexPage() {
         router.push(`/exams/${courseId}/${testId}`);
       }
     } catch (err) {
-      console.error(err);
+      const code = (
+        err as { graphQLErrors?: { extensions?: { code?: string } }[] }
+      )?.graphQLErrors?.[0]?.extensions?.code;
+      if (code === "ONGOING_TEST") {
+        await getActiveTest({ fetchPolicy: "network-only" });
+        setShowOngoingTestModal(true);
+      } else {
+        console.error(err);
+      }
     }
   };
+
+  const ongoingTestCourseTitle = courses.find(
+    ({ node }) => node.id === activeTest?.course_id,
+  )?.node.title;
 
   return (
     <div className="main-wrap">
@@ -231,6 +247,18 @@ export default function ExamsIndexPage() {
           ))}
         </div>
       </div>
+
+      <OngoingTestModal
+        open={showOngoingTestModal && !!activeTest}
+        onClose={() => setShowOngoingTestModal(false)}
+        onResume={() => {
+          if (activeTest) {
+            router.push(`/exams/${activeTest.course_id}/${activeTest.id}`);
+          }
+        }}
+        test={activeTest ?? null}
+        courseTitle={ongoingTestCourseTitle}
+      />
     </div>
   );
 }

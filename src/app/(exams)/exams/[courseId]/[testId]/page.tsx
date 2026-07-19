@@ -1,10 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
-import { QuestionType, TestModeType } from "@/common/graphql/generated/graphql";
-import { formatTimeRange } from "@/common/helpers";
+import {
+  QuestionType,
+  TestModeType,
+  TestStatusType,
+} from "@/common/graphql/generated/graphql";
+import { formatCountdown, formatTimeRange } from "@/common/helpers";
 import {
   useEndTest,
   usePauseTest,
@@ -12,7 +16,7 @@ import {
   useSubmitAnswer,
 } from "@/common/hooks/mutations";
 import { useGetTest, useStudentProfile } from "@/common/hooks/queries";
-import { SSEStreamEvent, useSSEStream } from "@/common/hooks/use-sse-stream";
+import { useTestCountdown } from "@/common/hooks/use-test-countdown";
 
 type Question = NonNullable<
   NonNullable<
@@ -24,15 +28,6 @@ type Question = NonNullable<
 
 const OPTION_LABELS = ["A", "B", "C", "D", "E"];
 
-function formatTime(secs: number) {
-  const h = Math.floor(secs / 3600);
-  const m = Math.floor((secs % 3600) / 60);
-  const s = secs % 60;
-  const mm = String(m).padStart(2, "0");
-  const ss = String(s).padStart(2, "0");
-  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
-}
-
 export default function ExamTakingPage() {
   const { courseId, testId } = useParams<{
     courseId: string;
@@ -41,7 +36,7 @@ export default function ExamTakingPage() {
   const router = useRouter();
 
   // ── Data hooks ──────────────────────────────────────────────────────────────
-  const { studentProfile, data: profileData } = useStudentProfile();
+  const { studentProfile } = useStudentProfile();
   const { getTest, data: testData } = useGetTest();
   const { submitAnswer } = useSubmitAnswer();
   const { pauseTest } = usePauseTest();
@@ -69,46 +64,39 @@ export default function ExamTakingPage() {
   const [isPaused, setIsPaused] = useState(false);
   const [showPauseModal, setShowPauseModal] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [showTestEndedModal, setShowTestEndedModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [timeLeft, setTimeLeft] = useState<number>(0);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
   const openSubmitModalAfterSubmit = useRef(false);
   const fillInInputRef = useRef<HTMLInputElement>(null);
 
-  // ── SSE timer ────────────────────────────────────────────────────────────────
-  const studentId = profileData?.id ?? "";
-  const streamUrl =
-    studentId && testMode !== TestModeType.UnProctured
-      ? `/api/stream/${testId}/${studentId}`
-      : "";
-
-  const handleSSEEvent = useCallback(
-    (event: SSEStreamEvent) => {
-      switch (event.type) {
-        case "time_update":
-          setTimeLeft(event.remainingSeconds ?? 0);
-          setIsPaused(false);
-          break;
-        case "test_paused":
-          setTimeLeft(event.remainingSeconds ?? 0);
-          setIsPaused(true);
-          setShowPauseModal(true);
-          break;
-        case "test_resumed":
-          setTimeLeft(event.remainingSeconds ?? 0);
-          setIsPaused(false);
-          setShowPauseModal(false);
-          break;
-        case "test_ended":
-          setTimeLeft(0);
-          router.push(`/exams/${courseId}/${testId}/result`);
-          break;
-      }
-    },
-    [router, courseId, testId],
+  // ── Countdown ────────────────────────────────────────────────────────────────
+  const timeEvents = useMemo(() => testData?.time_events ?? [], [testData]);
+  const totalEstimatedMs = useMemo(
+    () =>
+      (testData?.test_suite?.questions ?? []).reduce(
+        (sum, q) => sum + q.estimated_time_in_ms,
+        0,
+      ),
+    [testData],
   );
 
-  useSSEStream(streamUrl, { onEvent: handleSSEEvent });
+  const handleAutoEnd = useCallback(async () => {
+    if (testData?.mode === TestModeType.UnProctured) return; // learning mode has no deadline
+    try {
+      await endTest({ variables: { testId } });
+    } catch (err) {
+      console.error("Error auto-ending test:", err);
+    } finally {
+      router.push(`/exams/${courseId}/${testId}/result`);
+    }
+  }, [endTest, testId, courseId, router, testData?.mode]);
+
+  const { remainingMs } = useTestCountdown(
+    timeEvents,
+    totalEstimatedMs,
+    { onExpire: handleAutoEnd },
+  );
 
   // ── Derived ──────────────────────────────────────────────────────────────────
   const questions = (
@@ -192,6 +180,10 @@ export default function ExamTakingPage() {
     setAnsweredQuestions(answered);
     setFlaggedQuestions(flagged);
     setTestMode(testData.mode);
+    if (testData.status === TestStatusType.Paused) {
+      setIsPaused(true);
+      setShowPauseModal(true);
+    }
     if (testData.mode === TestModeType.UnProctured) {
       const learningMap = new Map<string, boolean>();
       testData.submitted_answers?.forEach((a) => {
@@ -375,7 +367,14 @@ export default function ExamTakingPage() {
         handleNext();
       }
     } catch (err) {
-      console.error("Error submitting answer:", err);
+      const code = (
+        err as { graphQLErrors?: { extensions?: { code?: string } }[] }
+      )?.graphQLErrors?.[0]?.extensions?.code;
+      if (code === "TEST_ENDED") {
+        setShowTestEndedModal(true);
+      } else {
+        console.error("Error submitting answer:", err);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -386,6 +385,7 @@ export default function ExamTakingPage() {
       await pauseTest({ variables: { testId } });
       setIsPaused(true);
       setShowPauseModal(true);
+      getTest({ variables: { testId } });
     } catch (err) {
       console.error("Error pausing test:", err);
     }
@@ -397,6 +397,7 @@ export default function ExamTakingPage() {
       setIsPaused(false);
       setShowPauseModal(false);
       setQuestionStartTime(Date.now());
+      getTest({ variables: { testId } });
     } catch (err) {
       console.error("Error resuming test:", err);
     }
@@ -436,7 +437,7 @@ export default function ExamTakingPage() {
           {suiteTitle || "Loading…"}
         </div>
         {!isLearningMode && (
-          <div className="mobile-timer">⏱ {formatTime(timeLeft)}</div>
+          <div className="mobile-timer">⏱ {formatCountdown(remainingMs).display}</div>
         )}
       </div>
 
@@ -896,7 +897,7 @@ export default function ExamTakingPage() {
           {!isLearningMode && (
             <div className="timer-card">
               <div className="timer-label">Time Elapsed</div>
-              <div className="timer-val">{formatTime(timeLeft)}</div>
+              <div className="timer-val">{formatCountdown(remainingMs).display}</div>
             </div>
           )}
           <div className="label-sm mb8">Progress</div>
@@ -978,6 +979,30 @@ export default function ExamTakingPage() {
               </button>
               <button className="btn btn-primary" onClick={handleEndTest}>
                 Submit Exam
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Test Ended Modal ── */}
+      {showTestEndedModal && (
+        <div className="modal-bg open">
+          <div className="modal-box">
+            <div className="modal-icon">⏹</div>
+            <div className="modal-title">Test Ended</div>
+            <div className="modal-sub">
+              This test has already ended, so your answer couldn&apos;t be
+              submitted. View your results below.
+            </div>
+            <div className="btn-row">
+              <button
+                className="btn btn-primary"
+                onClick={() =>
+                  router.push(`/exams/${courseId}/${testId}/result`)
+                }
+              >
+                View Results
               </button>
             </div>
           </div>

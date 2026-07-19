@@ -22,7 +22,7 @@ type LoginChildData = {
 };
 
 type LoginChildVars = {
-  input: { temp_token: string; pin: string };
+  input: { username: string; pin: string };
 };
 
 const useLoginChild = () => {

@@ -50,7 +50,6 @@ src/
 │       ├── auth/                  # OAuth callbacks
 │       ├── images/                # Remote image proxy (AWS, Vercel, localhost)
 │       ├── meili/                 # Meilisearch proxy
-│       ├── stream/[testId]/[studentId]/ # SSE for test timers
 │       └── v1/                    # REST endpoints
 ├── components/
 │   ├── ui/                        # Reusable primitive components
@@ -64,7 +63,7 @@ src/
     │   ├── mutations/             # GraphQL mutation hooks
     │   ├── queries/               # GraphQL query hooks
     │   ├── use-data-store.ts      # Zustand cart store
-    │   └── use-sse-stream.ts      # SSE hook for test timer
+    │   └── use-test-countdown.ts  # Client-side test countdown timer
     └── graphql/
         ├── mutations/             # .graphql mutation files
         ├── queries/               # .graphql query files
@@ -76,7 +75,6 @@ src/
 ```env
 GRAPHQL_BASE_URL=http://localhost:4001/graphql
 GRAPHQL_WS_BASE_URL=wss://localhost:4001/graphql/graphql-ws
-SSE_URL=http://localhost:4001
 REST_BASE_URL=http://localhost:4001
 MEILI_URL=http://localhost:7700
 MEILI_MASTER_KEY=password
@@ -111,7 +109,6 @@ All backend calls go through Next.js API routes — **never call the backend dir
 | `/api/images/*` | Image proxy (handles remote URLs) |
 | `/api/auth/*` | OAuth callbacks |
 | `/api/meili/*` | Meilisearch proxy |
-| `/api/stream/[testId]/[studentId]` | SSE test timer |
 
 ## Conventions
 

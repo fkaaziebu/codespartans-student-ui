@@ -1,10 +1,11 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Question,
   QuestionType,
   TestModeType,
+  TestStatusType,
 } from "@/common/graphql/generated/graphql";
 import { formatTimeRange } from "@/common/helpers";
 import {
@@ -16,8 +17,10 @@ import {
 import {
   useGetAllAttemptedQuestions,
   useGetSubscribedCourseDetails,
+  useGetTest,
   useStudentProfile,
 } from "@/common/hooks/queries";
+import { useTestCountdown } from "@/common/hooks/use-test-countdown";
 import { Button } from "@/components/ui/button";
 import TestNavbar from "../test-navbar";
 import { QuestionDisplay } from "./question-display";
@@ -50,7 +53,7 @@ export const TestTakingContentArea = () => {
   const [testMode, setTestMode] = useState<TestModeType | null>(null);
   const [answerResult, setAnswerResult] = useState<AnswerResult | null>(null);
 
-  const { data, studentProfile } = useStudentProfile();
+  const { studentProfile } = useStudentProfile();
   const { data: course, getSubscribedCourseDetails } =
     useGetSubscribedCourseDetails();
   const { data: attemptedQuestions, getAllAttemptedQuestions } =
@@ -59,6 +62,7 @@ export const TestTakingContentArea = () => {
   const { pauseTest } = usePauseTest();
   const { resumeTest } = useResumeTest();
   const { endTest } = useEndTest();
+  const { getTest, data: testData } = useGetTest();
   const { testId, courseId } = useParams<{
     testId: string;
     courseId: string;
@@ -67,6 +71,33 @@ export const TestTakingContentArea = () => {
 
   const isLearningMode = testMode === TestModeType.UnProctured;
   const totalQuestions = course?.approved_version?.questions?.length || 0;
+
+  const timeEvents = useMemo(() => testData?.time_events ?? [], [testData]);
+  const totalEstimatedMs = useMemo(
+    () =>
+      (testData?.test_suite?.questions ?? []).reduce(
+        (sum, q) => sum + q.estimated_time_in_ms,
+        0,
+      ),
+    [testData],
+  );
+
+  const handleAutoEnd = async () => {
+    if (testData?.mode === TestModeType.UnProctured) return; // learning mode has no deadline
+    try {
+      await endTest({ variables: { testId } });
+    } catch (err) {
+      console.error("Error auto-ending test:", err);
+    } finally {
+      setTestEnded(true);
+    }
+  };
+
+  const { remainingMs } = useTestCountdown(
+    timeEvents,
+    totalEstimatedMs,
+    { onExpire: handleAutoEnd },
+  );
 
   // Detect test mode by matching testId against attempts in fetched course data
   useEffect(() => {
@@ -153,8 +184,15 @@ export const TestTakingContentArea = () => {
         handleNext();
       }
     } catch (err: unknown) {
-      console.error("Error submitting answer:", err);
-      setError(`${(err as Error).message}`);
+      const code = (
+        err as { graphQLErrors?: { extensions?: { code?: string } }[] }
+      )?.graphQLErrors?.[0]?.extensions?.code;
+      if (code === "TEST_ENDED") {
+        setTestEnded(true);
+      } else {
+        console.error("Error submitting answer:", err);
+        setError(`${(err as Error).message}`);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -191,7 +229,10 @@ export const TestTakingContentArea = () => {
     if (!testId) return;
     try {
       const response = await pauseTest({ variables: { testId } });
-      if (response.data?.pauseTest) setIsPaused(true);
+      if (response.data?.pauseTest) {
+        setIsPaused(true);
+        getTest({ variables: { testId } });
+      }
     } catch (err) {
       console.error("Error pausing test:", err);
       setError("Failed to pause test.");
@@ -205,6 +246,7 @@ export const TestTakingContentArea = () => {
       if (response.data?.resumeTest) {
         setIsPaused(false);
         setStartTime(Date.now());
+        getTest({ variables: { testId } });
       }
     } catch (err) {
       console.error("Error resuming test:", err);
@@ -230,7 +272,15 @@ export const TestTakingContentArea = () => {
       variables: { testId },
       fetchPolicy: "no-cache",
     });
+    getTest({ variables: { testId } });
   }, []);
+
+  // Resync pause state from server truth (covers reload mid-pause)
+  useEffect(() => {
+    if (testData?.status === TestStatusType.Paused) {
+      setIsPaused(true);
+    }
+  }, [testData]);
 
   useEffect(() => {
     if (course?.approved_version?.questions) {
@@ -300,10 +350,9 @@ export const TestTakingContentArea = () => {
     <div className="min-h-screen bg-gray-50 pt-40 pb-12">
       <TestNavbar
         testName={course?.title || ""}
-        studentId={data?.id || ""}
-        testId={testId}
         mode={testMode}
-        handlePauseTest={(paused: boolean) => setIsPaused(paused)}
+        remainingMs={remainingMs}
+        isPaused={isPaused}
       />
 
       <div className="px-2 sm:px-6 lg:px-8 xl:px-12">

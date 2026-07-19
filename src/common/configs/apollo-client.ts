@@ -104,7 +104,7 @@ const errorLink = onError(({ graphQLErrors, operation, forward }) => {
     }
 
     if (code === "UNAUTHENTICATED" || code === "401") {
-      if (["LoginChild", "VerifyChildUsername"].includes(operation.operationName)) {
+      if (["LoginChild"].includes(operation.operationName)) {
         return;
       }
 

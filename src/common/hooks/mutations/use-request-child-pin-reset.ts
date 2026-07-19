@@ -5,7 +5,7 @@ type RequestChildPinResetData = {
   requestChildPinReset: boolean;
 };
 type RequestChildPinResetVars = {
-  input: { temp_token: string };
+  input: { username: string };
 };
 
 const useRequestChildPinReset = () => {

@@ -30,14 +30,18 @@ function OAuthConsentInner() {
     setIsInitialLoading(true);
     setErrorMessage(null);
 
-    fetch(`/api/v1/students/auth/consent/info?token=${encodeURIComponent(rawToken)}`)
+    fetch(
+      `/api/v1/students/auth/consent/info?token=${encodeURIComponent(rawToken)}`,
+    )
       .then(async (res) => {
         if (res.status === 401 || res.status === 400) {
           router.push("/oauth/failed");
           return;
         }
         if (res.status === 429) {
-          setErrorMessage("Too many attempts. Please wait a moment and try again.");
+          setErrorMessage(
+            "Too many attempts. Please wait a moment and try again.",
+          );
           setIsInitialLoading(false);
           return;
         }
@@ -87,7 +91,9 @@ function OAuthConsentInner() {
       }
 
       if (response.status === 429) {
-        setErrorMessage("Too many attempts. Please wait a moment and try again.");
+        setErrorMessage(
+          "Too many attempts. Please wait a moment and try again.",
+        );
         setIsLoading(false);
         return;
       }
@@ -239,7 +245,7 @@ function OAuthConsentInner() {
             >
               I agree to CodeSpartans&apos;{" "}
               <a
-                href={`${process.env.LANDING_URL}/terms`}
+                href={`${process.env.NEXT_PUBLIC_LANDING_URL}/terms`}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
@@ -248,7 +254,7 @@ function OAuthConsentInner() {
               </a>{" "}
               and{" "}
               <a
-                href={`${process.env.LANDING_URL}/terms`}
+                href={`${process.env.NEXT_PUBLIC_LANDING_URL}/terms`}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}

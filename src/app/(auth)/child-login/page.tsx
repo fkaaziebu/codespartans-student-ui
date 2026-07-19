@@ -6,7 +6,6 @@ import { Suspense } from "react";
 import Image from "next/image";
 import { ApolloError } from "@apollo/client";
 import {
-  useVerifyChildUsername,
   useLoginChild,
   useRequestChildPinReset,
 } from "@/common/hooks/mutations";
@@ -24,7 +23,6 @@ function ChildLoginInner() {
   const [screen, setScreen] = useState<Screen>("username");
   const [username, setUsername] = useState("");
   const [usernameError, setUsernameError] = useState("");
-  const [tempToken, setTempToken] = useState("");
   const [childName, setChildName] = useState("");
   const [childInitials, setChildInitials] = useState("");
   const [pin, setPin] = useState("");
@@ -41,8 +39,6 @@ function ChildLoginInner() {
   const usernameInputRef = useRef<HTMLInputElement>(null);
   const pinRealRef = useRef<HTMLInputElement>(null);
 
-  const { verifyChildUsername, loading: verifyLoading } =
-    useVerifyChildUsername();
   const { loginChild, loading: loginLoading } = useLoginChild();
   const { requestChildPinReset } = useRequestChildPinReset();
 
@@ -84,15 +80,8 @@ function ChildLoginInner() {
           .slice(0, 2),
       );
       goTo("pin");
-      // Silently re-verify to get a fresh temp_token for the reset flow
-      verifyChildUsername({ variables: { input: { username: storedUser } } })
-        .then((res) => {
-          const t = res.data?.verifyChildUsername.temp_token;
-          if (t) setTempToken(t);
-        })
-        .catch(() => {/* ignore — reset button will retry on demand */});
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Lock countdown
@@ -113,7 +102,6 @@ function ChildLoginInner() {
         setShowSupportNote(false);
         sessionStorage.removeItem("childLockUntil");
         sessionStorage.removeItem("childLockUsername");
-        setTempToken("");
         setChildName("");
         setChildInitials("");
         setUsername("");
@@ -141,75 +129,44 @@ function ChildLoginInner() {
     setTimeout(() => setPinShake(false), 450);
   }
 
-  const isDeactivatedCode = (extensions?: Record<string, unknown>) => {
-    const code = extensions?.code as string | undefined;
-    return code === "UNAUTHENTICATED" || code === "401";
-  };
+  // Note: extensions.code is UNAUTHENTICATED for both a deactivated account
+  // AND a plain wrong username/PIN — it can't be used to tell them apart.
+  // Only the message text distinguishes a deactivated account.
   const isDeactivatedMsg = (msg: string) =>
-    msg.toLowerCase().includes("unauthorized");
+    msg.toLowerCase().includes("deactivat");
   const isDeactivatedError = (err: unknown): boolean => {
     if (!(err instanceof Error)) return false;
     if (isDeactivatedMsg(err.message)) return true;
     return (
       err instanceof ApolloError &&
-      err.graphQLErrors.some((e) => isDeactivatedCode(e.extensions))
+      err.graphQLErrors.some((e) => isDeactivatedMsg(e.message ?? ""))
     );
   };
 
-  async function handleSubmitUsername() {
+  function handleSubmitUsername() {
     const val = username.trim();
     if (!val) {
       setUsernameError("Please enter your username.");
       return;
     }
     setUsernameError("");
-    try {
-      const res = await verifyChildUsername({
-        variables: { input: { username: val } },
-      });
-      if (res.errors?.length) {
-        const e = res.errors[0];
-        const msg = e?.message ?? "";
-        setUsernameError(
-          isDeactivatedMsg(msg) || isDeactivatedCode(e?.extensions)
-            ? msg
-            : msg || "Username not found.",
-        );
-        return;
-      }
-      const token = res.data?.verifyChildUsername.temp_token;
-      if (!token) {
-        setUsernameError(
-          "Username not found. Check the spelling or ask your parent.",
-        );
-        return;
-      }
-      setTempToken(token);
-      const parts = val.split(/[._\-\s]/);
-      const display = parts
-        .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-        .join(" ");
-      setChildName(display);
-      setChildInitials(
-        parts
-          .map((p) => p[0]?.toUpperCase() ?? "")
-          .join("")
-          .slice(0, 2),
-      );
-      setPin("");
-      setPinError("");
-      setFailedAttempts(0);
-      setLockedUntil(null);
-      goTo("pin");
-    } catch (err) {
-      setUsernameError(
-        isDeactivatedError(err)
-          ? // @ts-expect-error err
-            err?.message
-          : // @ts-expect-error err
-            err?.message || "Something went wrong. Please try again.",
-      );
-    }
+    setUsername(val);
+    const parts = val.split(/[._\-\s]/);
+    const display = parts
+      .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+      .join(" ");
+    setChildName(display);
+    setChildInitials(
+      parts
+        .map((p) => p[0]?.toUpperCase() ?? "")
+        .join("")
+        .slice(0, 2),
+    );
+    setPin("");
+    setPinError("");
+    setFailedAttempts(0);
+    setLockedUntil(null);
+    goTo("pin");
   }
 
   function pressKey(k: string) {
@@ -234,13 +191,13 @@ function ChildLoginInner() {
     if (lockedUntil && Date.now() < lockedUntil) return;
     try {
       const res = await loginChild({
-        variables: { input: { temp_token: tempToken, pin: pinToUse } },
+        variables: { input: { username: username.trim(), pin: pinToUse } },
       });
       if (res.errors?.length) {
         const e = res.errors[0];
         const msg = e?.message ?? "";
 
-        if (isDeactivatedMsg(msg) || isDeactivatedCode(e?.extensions)) {
+        if (isDeactivatedMsg(msg)) {
           setPin("");
           setPinError(
             "Your account has been deactivated. Please ask your parent for help.",
@@ -323,24 +280,11 @@ function ChildLoginInner() {
 
   async function handleRequestPinReset() {
     setResetRequestError("");
-    let token = tempToken;
-
-    // Ensure we have a valid temp_token before calling the mutation
-    if (!token) {
-      try {
-        const res = await verifyChildUsername({
-          variables: { input: { username } },
-        });
-        token = res.data?.verifyChildUsername.temp_token ?? "";
-        if (token) setTempToken(token);
-      } catch {
-        setResetRequestError("Something went wrong. Please try again.");
-        return;
-      }
-    }
 
     try {
-      await requestChildPinReset({ variables: { input: { temp_token: token } } });
+      await requestChildPinReset({
+        variables: { input: { username } },
+      });
       setResetRequestSent(true);
       setResetRequestConfirmed(true);
     } catch (err) {
@@ -352,26 +296,6 @@ function ChildLoginInner() {
       if (msg.includes("not currently locked")) {
         // Lock expired before they pressed the button — hide it silently
         setResetRequestSent(true);
-      } else if (msg.includes("Invalid") || msg.includes("expired")) {
-        // temp_token expired — refresh then retry once
-        try {
-          const res2 = await verifyChildUsername({
-            variables: { input: { username } },
-          });
-          const t2 = res2.data?.verifyChildUsername.temp_token ?? "";
-          if (t2) {
-            setTempToken(t2);
-            await requestChildPinReset({
-              variables: { input: { temp_token: t2 } },
-            });
-            setResetRequestSent(true);
-            setResetRequestConfirmed(true);
-          } else {
-            setResetRequestError("Something went wrong. Please try again.");
-          }
-        } catch {
-          setResetRequestError("Something went wrong. Please try again.");
-        }
       } else {
         setResetRequestError("Something went wrong. Please try again.");
       }
@@ -383,7 +307,6 @@ function ChildLoginInner() {
     setPinError("");
     setChildName("");
     setChildInitials("");
-    setTempToken("");
     setFailedAttempts(0);
     setLockedUntil(null);
     setUsername("");
@@ -531,9 +454,8 @@ function ChildLoginInner() {
               </div>
             </div>
             <button
-              className={`cl-submit-btn${verifyLoading ? " loading" : ""}`}
+              className="cl-submit-btn"
               onClick={handleSubmitUsername}
-              disabled={verifyLoading}
             >
               <span className="cl-btn-text">Continue →</span>
               <div className="cl-btn-spinner" />
@@ -553,7 +475,9 @@ function ChildLoginInner() {
           {/* Screen 2: PIN */}
           <div className={`cl-screen${screen === "pin" ? " active" : ""}`}>
             {pinError && !isLocked && (
-              <div className={`cl-error-banner show${isUrgentError ? " urgent" : ""}`}>
+              <div
+                className={`cl-error-banner show${isUrgentError ? " urgent" : ""}`}
+              >
                 <svg
                   width="16"
                   height="16"
@@ -628,19 +552,24 @@ function ChildLoginInner() {
                   Your account has been locked. Try again in:
                 </p>
                 <div className="cl-lockout-timer">
-                  {Math.floor(lockSecsLeft / 60)}:{String(lockSecsLeft % 60).padStart(2, "0")}
+                  {Math.floor(lockSecsLeft / 60)}:
+                  {String(lockSecsLeft % 60).padStart(2, "0")}
                 </div>
                 <p className="cl-lockout-hint">
-                  You can wait for the timer to expire, or ask your parent to reset your PIN.
+                  You can wait for the timer to expire, or ask your parent to
+                  reset your PIN.
                 </p>
                 {resetRequestConfirmed ? (
                   <p className="cl-lockout-confirmed">
-                    We&apos;ve notified your parent. They&apos;ll receive an email with instructions to reset your PIN.
+                    We&apos;ve notified your parent. They&apos;ll receive an
+                    email with instructions to reset your PIN.
                   </p>
                 ) : (
                   <>
                     {resetRequestError && (
-                      <p className="cl-lockout-reset-error">{resetRequestError}</p>
+                      <p className="cl-lockout-reset-error">
+                        {resetRequestError}
+                      </p>
                     )}
                     <button
                       className="cl-lockout-reset-btn"
@@ -660,7 +589,9 @@ function ChildLoginInner() {
                   </button>
                   {showSupportNote && (
                     <p className="cl-lockout-support-note">
-                      Direct support contact is coming soon. In the meantime, ask your parent to reset your PIN from their ExamForge account.
+                      Direct support contact is coming soon. In the meantime,
+                      ask your parent to reset your PIN from their ExamForge
+                      account.
                     </p>
                   )}
                 </div>
@@ -811,9 +742,21 @@ function ChildLoginInner() {
       </div>
 
       <div className="cl-page-footer">
-        <a href="#">Privacy Policy</a>
+        <a
+          href={`${process.env.NEXT_PUBLIC_LANDING_URL}/terms`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Privacy Policy
+        </a>
         &nbsp;·&nbsp;
-        <a href="#">Terms</a>
+        <a
+          href={`${process.env.NEXT_PUBLIC_LANDING_URL}/terms`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Terms
+        </a>
         &nbsp;·&nbsp; ExamForge © 2025
       </div>
     </div>
